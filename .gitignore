@@ -510,5 +510,5 @@ $RECYCLE.BIN/
 *.swp
 
 #Rider
-*.http
+**/*.http
 
