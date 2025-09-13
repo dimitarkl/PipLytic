@@ -50,6 +50,18 @@ namespace server
                 });
 
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IMarketDataService, MarketDataService>();
+            
+
+            builder.Services.AddHttpClient("AlphaVantage", client =>
+            {
+                client.BaseAddress = new Uri("https://www.alphavantage.co/");
+                client.Timeout = TimeSpan.FromSeconds(10);
+            });
+            
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
+            builder.Logging.SetMinimumLevel(LogLevel.Information);
 
             var app = builder.Build();
 
