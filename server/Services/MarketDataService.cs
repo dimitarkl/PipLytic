@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Web;
 using Microsoft.AspNetCore.WebUtilities;
 using server.Models;
@@ -62,13 +63,16 @@ public class MarketDataService : IMarketDataService
 
         return content;
     }
-
+    //TODO FIX
     private T ParseResponse<T>(string json)
     {
         if (json.Contains("\"Error Message\"", StringComparison.OrdinalIgnoreCase))
             throw new Exception("Alpha Vantage API returned an error: " + json);
 
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        // Allow numeric values that are encoded as JSON strings (e.g. "123.45") to be read as numbers
+        options.NumberHandling = JsonNumberHandling.AllowReadingFromString;
+
         return JsonSerializer.Deserialize<T>(json, options)
                ?? throw new Exception("Failed to deserialize Alpha Vantage response.");
     }

@@ -11,18 +11,23 @@ public class IntradayResponseDto
     public MetaData MetaData { get; set; }
 
     [JsonPropertyName("Time Series (1min)")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, TimeSeriesData> TimeSeries1Min { get; set; }
 
     [JsonPropertyName("Time Series (5min)")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, TimeSeriesData> TimeSeries5Min { get; set; }
 
     [JsonPropertyName("Time Series (15min)")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, TimeSeriesData> TimeSeries15Min { get; set; }
 
     [JsonPropertyName("Time Series (30min)")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, TimeSeriesData> TimeSeries30Min { get; set; }
 
     [JsonPropertyName("Time Series (60min)")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, TimeSeriesData> TimeSeries60Min { get; set; }
 }
 
