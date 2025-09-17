@@ -20,7 +20,7 @@ namespace server
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
-
+            builder.Services.AddMemoryCache();
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowReactApp", policy =>
@@ -52,10 +52,9 @@ namespace server
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IMarketDataService, MarketDataService>();
             
-
-            builder.Services.AddHttpClient("AlphaVantage", client =>
+            builder.Services.AddHttpClient("TwelveData", client =>
             {
-                client.BaseAddress = new Uri("https://www.alphavantage.co/");
+                client.BaseAddress = new Uri("https://api.twelvedata.com/");
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
             
