@@ -53,7 +53,7 @@ export function Register() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 max-w-md w-full">
             <Card>
                 <CardHeader>
                     <CardTitle>Register</CardTitle>

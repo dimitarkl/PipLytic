@@ -1,9 +1,8 @@
 import './App.css'
 import { useEffect } from 'react'
-import { Login } from './pages/auth/Login'
 import { UserProvider } from './contexts/UserContext'
-import { Route, Routes } from 'react-router-dom'
-import { Register } from './pages/auth/Register'
+import Router from './Router'
+import Header from './components/header/Header'
 
 function App() {
 
@@ -16,12 +15,10 @@ function App() {
     return (
         <UserProvider>
             <div className="app-root">
-                <div className="app-container">
-                    <Routes>
-                        <Route path='/login' element={<Login />} />
-                        <Route path='/register' element={<Register />} />
-                    </Routes>
-                </div>
+                <Header />
+                <main className="app-container">
+                    <Router />
+                </main>
             </div>
         </UserProvider>
     )

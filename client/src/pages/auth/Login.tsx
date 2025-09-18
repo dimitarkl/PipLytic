@@ -41,8 +41,7 @@ export function Login() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            {user && <Home />}
+        <div className="flex flex-col gap-6 max-w-md w-full">
             <Card>
                 <CardHeader>
                     <CardTitle>Login to your account</CardTitle>
