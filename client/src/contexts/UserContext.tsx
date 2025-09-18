@@ -22,11 +22,18 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
     useEffect(() => {
         const getUser = async () => {
-            const response = await api.get('/me')
-            setUser(response.data)
+
+            try {
+                const response = await api.get('/users/me')
+                if (response.data.user)
+                    setUser(response.data)
+                    
+            } catch (err) {
+                setUser(null)
+            }
         }
         getUser()
-    },)
+    }, [])
 
     const login = async (email: string, password: string) => {
         const response = await api.post(`/auth/login`, {

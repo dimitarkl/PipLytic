@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -17,6 +18,12 @@ namespace server
                 options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddControllers();
+
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                });
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
@@ -51,13 +58,14 @@ namespace server
 
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IMarketDataService, MarketDataService>();
-            
+            builder.Services.AddScoped<IUserService, UserService>();
+
             builder.Services.AddHttpClient("TwelveData", client =>
             {
                 client.BaseAddress = new Uri("https://api.twelvedata.com/");
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
-            
+
             builder.Logging.ClearProviders();
             builder.Logging.AddConsole();
             builder.Logging.SetMinimumLevel(LogLevel.Information);
@@ -65,6 +73,17 @@ namespace server
             var app = builder.Build();
 
             app.UseCors("AllowReactApp");
+
+            // Log every HTTP request
+            app.Use(async (context, next) =>
+            {
+                var method = context.Request.Method;
+                var path = context.Request.Path;
+                var query = context.Request.QueryString;
+                var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("{Method} {Path}{Query}", method, path, query);
+                await next();
+            });
 
             //Check if Db Exists
             DatabaseInitializer.EnsureDatabaseExists(builder.Configuration.GetConnectionString("DefaultConnection"));

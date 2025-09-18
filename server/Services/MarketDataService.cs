@@ -23,7 +23,7 @@ public class MarketDataService : IMarketDataService
 
     public async Task<TimeSeriesResponseDto> QueryStocksData(MarketDataDto request)
     {
-        var cacheKey = $"{request.symbol}:{request.interval}";
+        var cacheKey = $"{request.Symbol}:{request.Interval}";
 
         var ttl = TimeSpan.FromMinutes(3);
         
@@ -69,8 +69,8 @@ public class MarketDataService : IMarketDataService
         var (startDate, endDate) = GenerateRandomMonth();
         var queryParams = new Dictionary<string, string?>
         {
-            ["symbol"] = request.symbol,
-            ["interval"] = request.interval,
+            ["symbol"] = request.Symbol,
+            ["interval"] = request.Interval,
             ["apikey"] = _configuration.GetValue<string>("AppSettings:TwelveDataApiKey"),
             ["start_date"] = startDate,
             ["end_date"] = endDate

@@ -37,10 +37,9 @@ public class AuthService : IAuthService
 
         user.Email = request.Email;
         user.PasswordHash = hashedPassword;
-        var token = CreateToken(user);
+
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
-
         return await CreateTokenResponse(user);
     }
 
@@ -63,7 +62,7 @@ public class AuthService : IAuthService
 
     public async Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request)
     {
-        var user = await ValidateRefreshTokenAsync(request.UserId, request.RefreshToken);
+        var user = await ValidateRefreshTokenAsync(request.RefreshToken);
 
         if (user is null)
             return null;
@@ -80,10 +79,11 @@ public class AuthService : IAuthService
         };
     }
 
-    private async Task<User?> ValidateRefreshTokenAsync(Guid userId, string refreshToken)
+    private async Task<User?> ValidateRefreshTokenAsync(string refreshToken)
     {
         //TODO SEND Exception
-        var user = await _db.Users.FindAsync(userId);
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
         if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiry <= DateTime.UtcNow)
             return null;
 
@@ -111,6 +111,7 @@ public class AuthService : IAuthService
     {
         var claims = new List<Claim>
         {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
         };
         var key = new SymmetricSecurityKey(

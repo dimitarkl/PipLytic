@@ -12,6 +12,7 @@ export const api = axios.create({
 api.defaults.baseURL = API_URL;
 
 let accessToken = ""
+let refreshTokenPromise: Promise<string> | null = null
 
 export const setAccessToken = (token: string) => accessToken = token;
 
@@ -29,26 +30,40 @@ api.interceptors.response.use(
     response => response,
     async error => {
         const originalRequest = error.config;
-        console.log(error)
         if (error.response.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true; // Mark the request as retried to avoid infinite loops.
+            originalRequest._retry = true;
+            
             try {
-                // Make a request to your auth server to refresh the token.
-                const response = await axios.post(`${API_URL}/auth/refresh`, {},
-                    { withCredentials: true });
+                // If there's already a refresh in progress, wait for it
+                if (refreshTokenPromise) {
+                    const newAccessToken = await refreshTokenPromise;
+                    accessToken = newAccessToken;
+                    api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+                    return api(originalRequest);
+                }
+                
+                // Start a new refresh token request
+                refreshTokenPromise = axios.post(`${API_URL}/auth/refresh-token`, {},
+                    { withCredentials: true })
+                    .then(response => {
+                        const { accessToken: newAccessToken } = response.data;
+                        return newAccessToken;
+                    });
 
-                const { accessToken: newAccessToken } = response.data;
+                const newAccessToken = await refreshTokenPromise;
                 accessToken = newAccessToken;
+                refreshTokenPromise = null; 
 
                 api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
                 return api(originalRequest);
             } catch (refreshError) {
+                refreshTokenPromise = null; 
 
                 accessToken = ""
                 await api.post(`${API_URL}/auth/logout`, {}, { withCredentials: true })
                 return Promise.reject(refreshError);
             }
         }
-        return Promise.reject(error); // For all other errors, return the error as is.
+        return Promise.reject(error); 
     }
 );

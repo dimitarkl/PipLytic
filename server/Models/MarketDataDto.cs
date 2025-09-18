@@ -2,6 +2,6 @@
 
 public class MarketDataDto
 {
-    public string symbol { get; set; }
-    public string interval { get; set; }
+    public string Symbol { get; set; }
+    public string Interval { get; set; }
 }

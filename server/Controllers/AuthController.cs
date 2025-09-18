@@ -27,7 +27,7 @@ namespace server.Controllers
                 var cookieOptions = authService.CreateCookieOptions();
 
                 Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
-                
+
                 return Ok(new { accessToken = result.AccessToken });
             }
             catch (UserAlreadyExistsException ex)
@@ -43,7 +43,6 @@ namespace server.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<TokenResponseDto>> Login(UserDto request)
         {
-            Console.WriteLine("POST: login");
             try
             {
                 var result = await authService.LoginAsync(request);
@@ -66,15 +65,33 @@ namespace server.Controllers
         }
 
         [HttpPost("refresh-token")]
-        public async Task<ActionResult<TokenResponseDto>> RefreshToken(RefreshTokenRequestDto request)
+        public async Task<ActionResult<TokenResponseDto>> RefreshToken()
         {
-            var result = await authService.RefreshTokenAsync(request);
+            var refreshToken = Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrEmpty(refreshToken) )
+                return Unauthorized("Missing refresh token");
+            
+            var result = await authService.RefreshTokenAsync(new RefreshTokenRequestDto
+            {
+                RefreshToken = refreshToken
+            });
 
             if (result is null || result.AccessToken is null || result.RefreshToken is null)
                 return Unauthorized("Invalid refresh token");
-
-            return Ok(result);
+            var cookieOptions = authService.CreateCookieOptions();
+            Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
+            return Ok(new { accessToken = result.AccessToken });
         }
-        
+        [HttpPost("logout")]
+        public async Task<ActionResult> Logout()
+        {
+            // Clear the refreshToken cookie
+            Response.Cookies.Delete("refreshToken");
+            
+            return Ok(new { message = "Logged out successfully" });
+        }
     }
+    
+
 }

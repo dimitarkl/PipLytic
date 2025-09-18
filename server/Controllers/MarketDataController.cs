@@ -24,7 +24,7 @@ public class MarketDataController(IMarketDataService marketDataService, ILogger<
         }
         catch (Exception ex)
         { 
-            logger.LogError(ex, "Error fetching stock data for {Symbol}", request.symbol);
+            logger.LogError(ex, "Error fetching stock data for {Symbol}", request.Symbol);
             return StatusCode(500, "An unexpected error occurred. Please try again later.");
         };
     }
