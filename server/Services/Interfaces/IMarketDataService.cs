@@ -4,5 +4,5 @@ namespace server.Services;
 
 public interface IMarketDataService
 {
-    Task<TimeSeriesResponseDto> QueryStocksData(MarketDataDto request);
+    Task<StocksSearchResponseDto> QueryStocksData(MarketDataDto request);
 }

@@ -1,22 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
+using server.Utils;
 
 namespace server.Models
 {
-    public class TimeSeriesResponseDto
+    public class TimeSeriesResponse
     {
         [JsonPropertyName("meta")]
-        public TimeSeriesMeta Meta { get; set; }
+        public TimeSeriesResponseMeta Meta { get; set; }
 
         [JsonPropertyName("values")]
-        public List<TimeSeriesValue> Values { get; set; }
+        public List<TimeSeriesResponseValue> Values { get; set; }
 
         [JsonPropertyName("status")]
         public string Status { get; set; }
     }
 
-    public class TimeSeriesMeta
+    public class TimeSeriesResponseMeta
     {
         [JsonPropertyName("symbol")]
         public string Symbol { get; set; }
@@ -31,10 +30,18 @@ namespace server.Models
         public string ExchangeTimezone { get; set; }
     }
 
-    public class TimeSeriesValue
+    public class TimeSeriesResponseValue
     {
+        private string _dateTimeString;
+
         [JsonPropertyName("datetime")]
-        public string Datetime { get; set; }
+        public string DateTimeRaw
+        {
+            get => _dateTimeString;
+            set => _dateTimeString = value;
+        }
+        [JsonIgnore] 
+        public long DateTime => DateTimeUtils.ToUnixTimestamp(_dateTimeString);
 
         [JsonPropertyName("open")]
         public decimal Open { get; set; }
@@ -50,5 +57,6 @@ namespace server.Models
 
         [JsonPropertyName("volume")]
         public long Volume { get; set; }
+        
     }
 }
