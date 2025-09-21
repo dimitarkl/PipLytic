@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { UserProvider } from './contexts/UserContext'
 import Router from './Router'
 import Header from './components/header/Header'
+import { ThemeProvider } from './contexts/ThemeProvider'
 
 function App() {
 
@@ -13,14 +14,16 @@ function App() {
     }, [])
 
     return (
-        <UserProvider>
-            <div className="app-root">
-                <Header />
-                <main className="app-container">
-                    <Router />
-                </main>
-            </div>
-        </UserProvider>
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+            <UserProvider>
+                <div className="app-root">
+                    <Header />
+                    <main className="app-container">
+                        <Router />
+                    </main>
+                </div>
+            </UserProvider>
+        </ThemeProvider>
     )
 }
 

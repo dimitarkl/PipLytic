@@ -3,73 +3,74 @@ import { Button } from "../ui/button";
 import { useContext } from "react";
 import { UserContext } from "@/contexts/UserContext";
 import { Link } from "react-router-dom";
+import { ThemeToggle } from "../theme-toggle/ThemToggle";
 
 export default function Header() {
     const { user, logout } = useContext(UserContext)
 
     return (
-        <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    {/* Logo/Brand */}
-                    <Link to="/" className="flex items-center space-x-2">
-                        <BarChart3 className="h-8 w-8 text-blue-600" />
-                        <span className="text-xl font-bold text-gray-900 dark:text-white">
-                            Chart Choice
-                        </span>
+        <header className="w-full fixed px-4 top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex h-14 items-center">
+            {/* Logo/Brand */}
+            <Link to="/" className="mr-6 flex items-center space-x-2">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                <span className="hidden font-bold sm:inline-block">
+                    Chart Choice
+                </span>
+            </Link>
+
+            {/* Navigation */}
+            <nav className="flex items-center gap-6 text-sm">
+                <Link
+                    to="/"
+                    className="transition-colors hover:text-foreground/80 text-foreground/60"
+                >
+                    Home
+                </Link>
+                {user && (
+                    <Link
+                        to="/dashboard"
+                        className="transition-colors hover:text-foreground/80 text-foreground/60"
+                    >
+                        Dashboard
                     </Link>
+                )}
+            </nav>
 
-                    {/* Navigation */}
-                    <nav className="hidden md:flex items-center space-x-8">
-                        <Link 
-                            to="/" 
-                            className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        >
-                            Home
-                        </Link>
-                        {user && (
-                            <Link 
-                                to="/dashboard" 
-                                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                            >
-                                Dashboard
-                            </Link>
-                        )}
-                    </nav>
-
-                    {/* Auth Buttons */}
-                    <div className="flex items-center space-x-4">
-                        {!user ? (
-                            <>
-                                <Link to="/login">
-                                    <Button variant="ghost" size="sm">
-                                        <LogIn className="h-4 w-4 mr-2" />
-                                        Login
-                                    </Button>
-                                </Link>
-                                <Link to="/register">
-                                    <Button size="sm">
-                                        <User className="h-4 w-4 mr-2" />
-                                        Register
-                                    </Button>
-                                </Link>
-                            </>
-                        ) : (
-                            <div className="flex items-center space-x-4">
-                                <span className="text-sm text-gray-700 dark:text-gray-300">
-                                    Welcome, {user.email}
-                                </span>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={logout}
-                                >
-                                    <LogOut className="h-4 w-4 mr-2" />
-                                    Logout
+            <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+                {/* Auth Buttons */}
+                <ThemeToggle />
+                <div className="flex items-center space-x-2">
+                    {!user ? (
+                        <>
+                            <Link to="/login">
+                                <Button variant="ghost" size="sm">
+                                    <LogIn className="h-4 w-4 mr-2" />
+                                    Login
                                 </Button>
-                            </div>
-                        )}
-                    </div>
+                            </Link>
+                            <Link to="/register">
+                                <Button size="sm">
+                                    <User className="h-4 w-4 mr-2" />
+                                    Register
+                                </Button>
+                            </Link>
+                        </>
+                    ) : (
+                        <div className="flex items-center space-x-2">
+                            <span className="text-sm text-muted-foreground">
+                                Welcome, {user.email}
+                            </span>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={logout}
+                            >
+                                <LogOut className="h-4 w-4 mr-2" />
+                                Logout
+                            </Button>
+                        </div>
+                    )}
+                    
                 </div>
             </div>
         </header>
