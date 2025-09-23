@@ -23,7 +23,7 @@ namespace server.Services.Mappers
                     Low = v.Low,
                     Close = v.Close,
                     Volume = v.Volume
-                }).ToList(),
+                }).OrderBy(v => v.Time).ToList(),
                 Status = timeSeriesResponse.Status
             };
         }

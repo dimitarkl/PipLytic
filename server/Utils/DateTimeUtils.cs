@@ -8,6 +8,10 @@ public class DateTimeUtils
     {
         if (string.IsNullOrEmpty(datetime))
             return 0;
+        
+        if (long.TryParse(datetime, out long unixTimestamp))
+            return unixTimestamp;
+        
 
         var dt = System.DateTime.ParseExact(
             datetime,
@@ -18,6 +22,7 @@ public class DateTimeUtils
 
         return new DateTimeOffset(dt).ToUnixTimeSeconds();
     }
+
     public static (string StartDate, string EndDate) GenerateRandomMonth()
     {
         var start = new DateTime(2020, 2, 11, 0, 0, 0, DateTimeKind.Utc);

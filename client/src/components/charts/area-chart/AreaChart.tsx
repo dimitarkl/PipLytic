@@ -38,18 +38,6 @@ export default function AreaChart(props: AreaChartProps) {
         wickUpColor: chartColors.series.wickUp, wickDownColor: chartColors.series.wickDown,
     };
 
-    const processedData = data
-        ?
-        data.map(d => ({
-            time: Number(d.time) as UTCTimestamp,
-            open: Number(d.open),
-            high: Number(d.high),
-            low: Number(d.low),
-            close: Number(d.close),
-        }))
-            .sort((a, b) => a.time - b.time)
-        : []
-
     const volumeData = data
         ? data
             .map(d => ({
@@ -57,16 +45,21 @@ export default function AreaChart(props: AreaChartProps) {
                 value: d.volume ?? 0,
                 color: d.close >= d.open ? chartColors.series.up : chartColors.series.down,
             }))
-            .sort((a, b) => a.time - b.time)
         : [];
 
     return (
         <Chart options={chartOptions}>
-            <Pane stretchFactor={2}>
-                <CandlestickSeries data={processedData} options={candlestickSeriesOptions} />
+            <Pane
+                stretchFactor={2}
+            >
+                <CandlestickSeries
+                    data={data}
+                    options={candlestickSeriesOptions}
+                />
             </Pane>
             <Pane>
-                <HistogramSeries data={volumeData} />
+                <HistogramSeries
+                    data={volumeData} />
             </Pane>
         </Chart>
     )

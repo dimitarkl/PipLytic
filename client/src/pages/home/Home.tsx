@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
+import { ChartData } from '@/types/chartData';
 import { useEffect, useState } from 'react';
 
 type Meta = {
@@ -14,14 +15,7 @@ type Meta = {
 }
 type StocksDataResponse = {
     "meta": Meta,
-    "values": {
-        "time": number,
-        "open": number,
-        "high": number,
-        "low": number,
-        "close": number,
-        "volume": number
-    }[],
+    "values": ChartData,
 }
 type SearchResponse = {
     data: StocksDataResponse
@@ -9867,7 +9861,8 @@ const offlineData = {
 }
 
 export default function Home() {
-    const [chartData, setChartData] = useState<any>()
+    const [interval, setInterval] = useState<"5min" | "15min" | "1h">("5min")
+    const [chartData, setChartData] = useState<ChartData>()
     const [meta, setMeta] = useState<Meta>()
 
     useEffect(() => {
@@ -9875,7 +9870,7 @@ export default function Home() {
             try {
                 const response: SearchResponse = await api.post('/market/stocks/search', {
                     symbol: "IBM",
-                    interval: "5min"
+                    interval: interval
                 })
                 setMeta(response.data.meta)
                 setChartData(response.data.values)
@@ -9884,22 +9879,52 @@ export default function Home() {
             }
         }
         getChartData()
-    }, [])
+    }, [interval])
 
     return (
         <Card className='p-5 flex flex-row gap-10'>
             <div>
                 <h2 className='font-bold text-2xl'>{meta?.symbol ?? ''}</h2>
                 <div className='flex flex-row space-x-2'>
-                    <Button>
-                        5m
+                    <Button
+                        variant={interval === "5min" ? "default" : "ghost"}
+                        type='button'
+                        onClick={()=>setInterval("5min")}
+                    >
+                        5min
                     </Button>
-                    <Button>
-                        15m
+                    <Button
+                        variant={interval === "15min" ? "default" : "ghost"}
+                        type='button'
+                        onClick={()=>setInterval("15min")}
+                    >
+                        15min
                     </Button>
+                    <Button
+                        variant={interval === "1h" ? "default" : "ghost"}
+                        type='button'
+                        onClick={()=>setInterval("1h")}
+
+                    >
+                        1hr
+                    </Button>
+                    {/* <Button
+                        variant={interval === "4hr" ? "default" : "ghost"}
+                        type='button'
+                        onClick={()=>setInterval("4hr")}
+                    >
+                        4hr
+                    </Button>
+                    <Button
+                        variant={interval !== "1d" && "ghost"}
+                        type='button'
+                        onClick={()=>setInterval("1d")}
+                    >
+                        1d
+                    </Button> */}
                 </div>
                 <AreaChart
-                    data={chartData}
+                    data={chartData || []}
                 />
             </div>
             <div className='flex flex-col gap-20'>

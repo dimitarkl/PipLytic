@@ -28,20 +28,19 @@ public class MarketDataService : IMarketDataService
         var cacheKey = CacheUtils.GenerateMarketDataCacheKey(request.Symbol, request.Interval);
         var ttl = CacheUtils.MarketDataTtl;
 
-        //8 calls a minute/800 a day
-        if (!_cache.TryGetValue(cacheKey, out string jsonString))
+        if (!_cache.TryGetValue(cacheKey, out TimeSeriesResponse resampledData))
         {
             var url = BuildTimeSeriesUrl(request);
             Console.WriteLine(url);
-            var response = await SendRequestAsync(url);
 
-            _cache.Set(cacheKey, response, ttl);
-            jsonString = response;
+            var response = await SendRequestAsync(url);
+            var rawData = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
+
+            resampledData = TimeSeriesResampler.Resample(request.Interval, rawData);
+            _cache.Set(cacheKey, resampledData, ttl);
         }
 
-        var twelveDataResponse = JsonUtils.ParseResponse<TimeSeriesResponse>(jsonString);
-
-        return MarketDataMapper.MapToClientResponse(twelveDataResponse);
+        return MarketDataMapper.MapToClientResponse(resampledData);
     }
 
     private string BuildTimeSeriesUrl(MarketDataDto request)
@@ -50,7 +49,7 @@ public class MarketDataService : IMarketDataService
         var queryParams = new Dictionary<string, string?>
         {
             ["symbol"] = request.Symbol,
-            ["interval"] = request.Interval,
+            ["interval"] = "5min",
             ["apikey"] = _configuration.GetValue<string>("AppSettings:TwelveDataApiKey"),
             ["start_date"] = startDate,
             ["end_date"] = endDate
