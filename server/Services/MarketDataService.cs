@@ -25,22 +25,37 @@ public class MarketDataService : IMarketDataService
 
     public async Task<StocksSearchResponseDto> QueryStocksData(MarketDataDto request)
     {
-        var cacheKey = CacheUtils.GenerateMarketDataCacheKey(request.Symbol, request.Interval);
+        var requestedIntervalKey = CacheUtils.GenerateMarketDataCacheKey(request.Symbol, request.Interval);
         var ttl = CacheUtils.MarketDataTtl;
 
-        if (!_cache.TryGetValue(cacheKey, out TimeSeriesResponse resampledData))
+        if (_cache.TryGetValue(requestedIntervalKey, out TimeSeriesResponse finalData))
+            return MarketDataMapper.MapToClientResponse(finalData);
+
+        var fiveMinCacheKey = CacheUtils.GenerateMarketDataCacheKey(request.Symbol, "5min");
+
+        if (_cache.TryGetValue(fiveMinCacheKey, out TimeSeriesResponse fiveMinData))
         {
-            var url = BuildTimeSeriesUrl(request);
-            Console.WriteLine(url);
+            var resampledFromCache = TimeSeriesResampler.Resample(request.Interval, fiveMinData);
 
-            var response = await SendRequestAsync(url);
-            var rawData = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
+            _cache.Set(requestedIntervalKey, resampledFromCache, ttl);
 
-            resampledData = TimeSeriesResampler.Resample(request.Interval, rawData);
-            _cache.Set(cacheKey, resampledData, ttl);
+            return MarketDataMapper.MapToClientResponse(resampledFromCache);
         }
 
-        return MarketDataMapper.MapToClientResponse(resampledData);
+        var url = BuildTimeSeriesUrl(request);
+        Console.WriteLine(url);
+
+        var response = await SendRequestAsync(url);
+        var rawFiveMinData = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
+
+        //Set the raw 5minutes
+        _cache.Set(fiveMinCacheKey, rawFiveMinData, ttl);
+
+        TimeSeriesResponse dataToReturn = TimeSeriesResampler.Resample(request.Interval, rawFiveMinData);
+        //Set the normal cache
+        _cache.Set(requestedIntervalKey, dataToReturn, ttl);
+
+        return MarketDataMapper.MapToClientResponse(dataToReturn);
     }
 
     private string BuildTimeSeriesUrl(MarketDataDto request)

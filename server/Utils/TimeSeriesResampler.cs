@@ -6,18 +6,24 @@ public class TimeSeriesResampler
 {
     public static TimeSeriesResponse Resample(string targetInterval, TimeSeriesResponse timeSeriesJson)
     {
-        TimeSeriesResponse resampledJson;
         var timeSeriesValues = timeSeriesJson.Values;
+        var resampledJson = new TimeSeriesResponse
+        {
+            Meta = timeSeriesJson.Meta,
+            Status = timeSeriesJson.Status,
+            Values = new List<TimeSeriesResponseValue>()
+        };
+        resampledJson.Meta.Interval = targetInterval;
         switch (targetInterval)
         {
             case "5min":
                 resampledJson = timeSeriesJson;
                 break;
             case "15min":
-                resampledJson = ResampleTimeSeries(timeSeriesJson, 3);
+                resampledJson = ResampleTimeSeries(resampledJson, timeSeriesJson, 3);
                 break;
             case "1h":
-                resampledJson = ResampleTimeSeries(timeSeriesJson, 12);//12 * 5 = 60
+                resampledJson = ResampleTimeSeries(resampledJson, timeSeriesJson, 12); //12 * 5 = 60
                 break;
             default:
                 throw new Exception($"Invalid target interval: {targetInterval}");
@@ -27,21 +33,16 @@ public class TimeSeriesResampler
     }
 
     private static TimeSeriesResponse ResampleTimeSeries(
+        TimeSeriesResponse resampledJson,
         TimeSeriesResponse timeSeriesJson,
         int groupSize)
     {
-        var resampledJson = new TimeSeriesResponse
-        {
-            Meta = timeSeriesJson.Meta,
-            Status = timeSeriesJson.Status,
-            Values = new List<TimeSeriesResponseValue>()
-        };
         var timeSeriesValues = timeSeriesJson.Values;
 
         for (int i = 0; i + groupSize <= timeSeriesValues.Count; i += groupSize)
         {
             var values = timeSeriesValues.GetRange(i, groupSize);
-            
+
             //TODO Risky if data  changes
             resampledJson.Values.Add(new TimeSeriesResponseValue
             {
