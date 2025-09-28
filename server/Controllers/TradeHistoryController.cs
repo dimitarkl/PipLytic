@@ -14,12 +14,12 @@ namespace server.Controllers;
 public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHistoryController> logger) : ControllerBase
 {
     [HttpGet]
-    public IActionResult GetUserTrades()
+    public async Task<ActionResult<List<Trade>>> GetUserTrades()
     {
         try
         {
             var userId = HttpContext.GetUserId();
-            var trades = tradeService.GetUserTrades(userId);
+            var trades = await tradeService.GetUserTrades(userId);
 
             return Ok(trades);
         }

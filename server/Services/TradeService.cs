@@ -20,7 +20,7 @@ public class TradeService : ITradeService
     {
         if (request.Type != "short" && request.Type != "long")
             throw new Exception("Invalid trade type");
-        
+
         Trade trade = new Trade
         {
             UserId = userId,
@@ -60,7 +60,7 @@ public class TradeService : ITradeService
     public async Task<Trade> GetTrade(Guid tradeId)
     {
         Trade trade = await _db.Trades.FindAsync(tradeId);
-        
+
         if (trade == null)
             throw new NotFoundException($"Trade {tradeId} not found.");
 
@@ -77,6 +77,6 @@ public class TradeService : ITradeService
         if (!trades.Any())
             throw new NotFoundException($"Trades for user {userId} not found");
 
-        return trades;
+        return trades.OrderByDescending(trade => trade.ExecutedAt).ToList();
     }
 }
