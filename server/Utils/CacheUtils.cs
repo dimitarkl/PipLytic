@@ -9,5 +9,7 @@ public static class CacheUtils
     }
 
     public static TimeSpan MarketDataTtl => TimeSpan.FromMinutes(3);
+    
+    public static TimeSpan UserCacheSlidingTtl => TimeSpan.FromMinutes(5);
 
 }

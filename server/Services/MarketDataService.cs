@@ -23,39 +23,65 @@ public class MarketDataService : IMarketDataService
         _cache = cache;
     }
 
-    public async Task<StocksSearchResponseDto> QueryStocksData(MarketDataDto request)
+    private TimeSeriesResponse GetUserCacheIfExists(string userId, string symbol)
     {
-        var requestedIntervalKey = CacheUtils.GenerateMarketDataCacheKey(request.Symbol, request.Interval);
-        var ttl = CacheUtils.MarketDataTtl;
+        var userCacheKey = $"user:{userId}:symbol:{symbol}:5min";
+        var userTtl = CacheUtils.UserCacheSlidingTtl;
 
-        if (_cache.TryGetValue(requestedIntervalKey, out TimeSeriesResponse finalData))
-            return MarketDataMapper.MapToClientResponse(finalData);
-
-        var fiveMinCacheKey = CacheUtils.GenerateMarketDataCacheKey(request.Symbol, "5min");
-
-        if (_cache.TryGetValue(fiveMinCacheKey, out TimeSeriesResponse fiveMinData))
+        if (_cache.TryGetValue(userCacheKey, out TimeSeriesResponse cachedData))
         {
-            var resampledFromCache = TimeSeriesResampler.Resample(request.Interval, fiveMinData);
-
-            _cache.Set(requestedIntervalKey, resampledFromCache, ttl);
-
-            return MarketDataMapper.MapToClientResponse(resampledFromCache);
+            _cache.Set(userCacheKey, cachedData, userTtl);
+            return cachedData;
         }
 
-        var url = BuildTimeSeriesUrl(request);
-        Console.WriteLine(url);
+        return null;
+    }
+
+    private async Task<TimeSeriesResponse> GetSharedFiveMinCacheAsync(string symbol)
+    {
+        var cacheKey = CacheUtils.GenerateMarketDataCacheKey(symbol, "5min");
+        var sharedTtl = CacheUtils.MarketDataTtl;
+
+        if (_cache.TryGetValue(cacheKey, out TimeSeriesResponse cachedData))
+            return cachedData;
+
+
+        var url = BuildTimeSeriesUrl(new MarketDataDto { Symbol = symbol, Interval = "5min" });
 
         var response = await SendRequestAsync(url);
-        var rawFiveMinData = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
+        var data = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
 
-        //Set the raw 5minutes
-        _cache.Set(fiveMinCacheKey, rawFiveMinData, ttl);
+        _cache.Set(cacheKey, data, sharedTtl);
 
-        TimeSeriesResponse dataToReturn = TimeSeriesResampler.Resample(request.Interval, rawFiveMinData);
-        //Set the normal cache
-        _cache.Set(requestedIntervalKey, dataToReturn, ttl);
+        return data;
+    }
 
-        return MarketDataMapper.MapToClientResponse(dataToReturn);
+    private void StoreUserCache(string userId, string symbol, TimeSeriesResponse baseData)
+    {
+        var userCacheKey = $"user:{userId}:symbol:{symbol}:5min";
+        var userTtl = CacheUtils.UserCacheSlidingTtl;
+
+        var userDataCopy = baseData.DeepClone();
+        _cache.Set(userCacheKey, userDataCopy, userTtl);
+    }
+
+    public async Task<StocksSearchResponseDto> QueryStocksData(MarketDataDto request, string userId)
+    {
+        var userCache = GetUserCacheIfExists(userId, request.Symbol);
+        if (userCache != null)
+        {
+            var resampled = TimeSeriesResampler.Resample(request.Interval, userCache);
+            return MarketDataMapper.MapToClientResponse(resampled);
+        }
+
+        var sharedBase = await GetSharedFiveMinCacheAsync(request.Symbol);
+
+        StoreUserCache(userId, request.Symbol, sharedBase);
+
+        var userCacheForRequest = GetUserCacheIfExists(userId, request.Symbol);
+        var resampledData = TimeSeriesResampler.Resample(request.Interval, userCacheForRequest);
+        
+        return MarketDataMapper.MapToClientResponse(resampledData);
     }
 
     private string BuildTimeSeriesUrl(MarketDataDto request)

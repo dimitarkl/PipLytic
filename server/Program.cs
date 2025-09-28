@@ -59,6 +59,7 @@ namespace server
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IMarketDataService, MarketDataService>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<ITradeService, TradeService>();
 
             builder.Services.AddHttpClient("TwelveData", client =>
             {

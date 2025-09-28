@@ -15,15 +15,18 @@ namespace server.Services.Mappers
                     Currency = timeSeriesResponse.Meta.Currency,
                     ExchangeTimezone = timeSeriesResponse.Meta.ExchangeTimezone
                 },
-                Values = timeSeriesResponse.Values.Select(v => new StocksSearchResponseValue
-                {
-                    Time = v.DateTime,
-                    Open = v.Open,
-                    High = v.High,
-                    Low = v.Low,
-                    Close = v.Close,
-                    Volume = v.Volume
-                }).OrderBy(v => v.Time).ToList(),
+                Values = timeSeriesResponse.Values
+                    .OrderBy(v => v.DateTime)
+                    .Select(v => new StocksSearchResponseValue
+                    {
+                        Time = v.DateTime,
+                        Open = v.Open,
+                        High = v.High,
+                        Low = v.Low,
+                        Close = v.Close,
+                        Volume = v.Volume
+                    })
+                    .ToList(),
                 Status = timeSeriesResponse.Status
             };
         }

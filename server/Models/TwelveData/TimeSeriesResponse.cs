@@ -1,29 +1,30 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using server.Utils;
 
 namespace server.Models
 {
     public class TimeSeriesResponse
     {
-        [JsonPropertyName("meta")]
+        [JsonPropertyName("meta")] 
         public TimeSeriesResponseMeta Meta { get; set; }
 
-        [JsonPropertyName("values")]
+        [JsonPropertyName("values")] 
         public List<TimeSeriesResponseValue> Values { get; set; }
 
-        [JsonPropertyName("status")]
+        [JsonPropertyName("status")] 
         public string Status { get; set; }
     }
 
     public class TimeSeriesResponseMeta
     {
-        [JsonPropertyName("symbol")]
+        [JsonPropertyName("symbol")] 
         public string Symbol { get; set; }
 
-        [JsonPropertyName("interval")]
+        [JsonPropertyName("interval")] 
         public string Interval { get; set; }
 
-        [JsonPropertyName("currency")]
+        [JsonPropertyName("currency")] 
         public string Currency { get; set; }
 
         [JsonPropertyName("exchange_timezone")]
@@ -40,23 +41,37 @@ namespace server.Models
             get => _dateTimeString;
             set => _dateTimeString = value;
         }
+
         [JsonIgnore] 
         public long DateTime => DateTimeUtils.ToUnixTimestamp(_dateTimeString);
 
-        [JsonPropertyName("open")]
+        [JsonPropertyName("open")] 
         public decimal Open { get; set; }
 
-        [JsonPropertyName("high")]
+        [JsonPropertyName("high")] 
         public decimal High { get; set; }
 
-        [JsonPropertyName("low")]
+        [JsonPropertyName("low")] 
         public decimal Low { get; set; }
 
-        [JsonPropertyName("close")]
+        [JsonPropertyName("close")] 
         public decimal Close { get; set; }
 
-        [JsonPropertyName("volume")]
+        [JsonPropertyName("volume")] 
         public long Volume { get; set; }
-        
+    }
+    
+    public static class TimeSeriesResponseExtensions
+    {
+        public static TimeSeriesResponse DeepClone(this TimeSeriesResponse original)
+        {
+            if (original == null)
+            {
+                return null;
+            }
+
+            var json = JsonSerializer.Serialize(original);
+            return JsonSerializer.Deserialize<TimeSeriesResponse>(json);
+        }
     }
 }
