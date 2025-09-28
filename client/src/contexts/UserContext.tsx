@@ -26,8 +26,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             try {
                 const response = await api.get('/users/me')
                 if (response.data.user)
-                    setUser(response.data)
-                    
+                    setUser(response.data.user)
+
             } catch (err) {
                 setUser(null)
             }

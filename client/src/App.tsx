@@ -18,9 +18,9 @@ function App() {
             <UserProvider>
                 <div className="app-root">
                     <Header />
-                    <main className="app-container">
+                    <div className="app-container">
                         <Router />
-                    </main>
+                    </div>
                 </div>
             </UserProvider>
         </ThemeProvider>

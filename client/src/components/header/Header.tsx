@@ -7,14 +7,14 @@ import { ThemeToggle } from "../theme-toggle/ThemToggle";
 
 export default function Header() {
     const { user, logout } = useContext(UserContext)
-
+    
     return (
         <header className="w-full fixed px-4 top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex h-14 items-center">
             {/* Logo/Brand */}
             <Link to="/" className="mr-6 flex items-center space-x-2">
                 <BarChart3 className="h-6 w-6 text-primary" />
                 <span className="hidden font-bold sm:inline-block">
-                    Chart Choice
+                    PipLytic
                 </span>
             </Link>
 
@@ -26,14 +26,6 @@ export default function Header() {
                 >
                     Home
                 </Link>
-                {user && (
-                    <Link
-                        to="/dashboard"
-                        className="transition-colors hover:text-foreground/80 text-foreground/60"
-                    >
-                        Dashboard
-                    </Link>
-                )}
             </nav>
 
             <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
@@ -57,9 +49,9 @@ export default function Header() {
                         </>
                     ) : (
                         <div className="flex items-center space-x-2">
-                            <span className="text-sm text-muted-foreground">
+                            <Link to="/user" className="text-sm text-muted-foreground underline">
                                 Welcome, {user.email}
-                            </span>
+                            </Link >
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -70,7 +62,7 @@ export default function Header() {
                             </Button>
                         </div>
                     )}
-                    
+
                 </div>
             </div>
         </header>
