@@ -2,12 +2,18 @@ import { LogIn, LogOut, User, BarChart3 } from "lucide-react";
 import { Button } from "../ui/button";
 import { useContext } from "react";
 import { UserContext } from "@/contexts/UserContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "../theme-toggle/ThemToggle";
 
 export default function Header() {
     const { user, logout } = useContext(UserContext)
-    
+    const navigate = useNavigate()
+
+    const logoutUser = async () => {
+        await logout()
+        navigate('')
+    }
+
     return (
         <header className="w-full fixed px-4 top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex h-14 items-center">
             {/* Logo/Brand */}
@@ -40,12 +46,6 @@ export default function Header() {
                                     Login
                                 </Button>
                             </Link>
-                            <Link to="/register">
-                                <Button size="sm">
-                                    <User className="h-4 w-4 mr-2" />
-                                    Register
-                                </Button>
-                            </Link>
                         </>
                     ) : (
                         <div className="flex items-center space-x-2">
@@ -55,7 +55,7 @@ export default function Header() {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={logout}
+                                onClick={logoutUser}
                             >
                                 <LogOut className="h-4 w-4 mr-2" />
                                 Logout
