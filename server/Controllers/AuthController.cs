@@ -69,29 +69,27 @@ namespace server.Controllers
         {
             var refreshToken = Request.Cookies["refreshToken"];
 
-            if (string.IsNullOrEmpty(refreshToken) )
+            if (string.IsNullOrEmpty(refreshToken))
                 return Unauthorized("Missing refresh token");
-            
+
             var result = await authService.RefreshTokenAsync(new RefreshTokenRequestDto
             {
                 RefreshToken = refreshToken
             });
 
             if (result is null || result.AccessToken is null || result.RefreshToken is null)
-                return Unauthorized("Invalid refresh token");
+                return Unauthorized(new { message = "Invalid refresh token" });
             var cookieOptions = authService.CreateCookieOptions();
             Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
             return Ok(new { accessToken = result.AccessToken });
         }
+
         [HttpPost("logout")]
-        public async Task<ActionResult> Logout()
+        public ActionResult Logout()
         {
-            // Clear the refreshToken cookie
             Response.Cookies.Delete("refreshToken");
-            
+
             return Ok(new { message = "Logged out successfully" });
         }
     }
-    
-
 }

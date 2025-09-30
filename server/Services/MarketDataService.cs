@@ -23,7 +23,7 @@ public class MarketDataService : IMarketDataService
         _cache = cache;
     }
 
-    private TimeSeriesResponse GetUserCacheIfExists(string userId, string symbol)
+    private TimeSeriesResponse? GetUserCacheIfExists(string userId, string symbol)
     {
         var userCacheKey = $"user:{userId}:symbol:{symbol}:5min";
         var userTtl = CacheUtils.UserCacheSlidingTtl;
@@ -80,7 +80,7 @@ public class MarketDataService : IMarketDataService
 
         var userCacheForRequest = GetUserCacheIfExists(userId, request.Symbol);
         var resampledData = TimeSeriesResampler.Resample(request.Interval, userCacheForRequest);
-        
+
         return MarketDataMapper.MapToClientResponse(resampledData);
     }
 
@@ -104,9 +104,8 @@ public class MarketDataService : IMarketDataService
         var response = await _client.GetAsync(url);
         var content = await response.Content.ReadAsStringAsync();
 
-        if (!response.IsSuccessStatusCode)
-            throw new HttpRequestException($"API request failed ({response.StatusCode}): {content}");
-
-        return content;
+        return !response.IsSuccessStatusCode
+            ? throw new HttpRequestException($"API request failed ({response.StatusCode}): {content}")
+            : content;
     }
 }

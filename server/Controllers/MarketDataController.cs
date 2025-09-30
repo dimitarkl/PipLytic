@@ -25,7 +25,6 @@ public class MarketDataController(IMarketDataService marketDataService, ILogger<
             if (string.IsNullOrEmpty(userIdClaim))
                 return Unauthorized();
 
-            var userId = Guid.Parse(userIdClaim);
             var result = await marketDataService.QueryStocksData(request, userIdClaim);
             return Ok(result);
         }
@@ -34,7 +33,5 @@ public class MarketDataController(IMarketDataService marketDataService, ILogger<
             logger.LogError(ex, "Error fetching stock data for {Symbol}", request.Symbol);
             return StatusCode(500, "An unexpected error occurred. Please try again later.");
         }
-
-        ;
     }
 }
