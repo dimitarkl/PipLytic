@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Security.Claims;
 using System.Web;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using server.Models;
@@ -15,6 +16,7 @@ namespace server.Controllers;
 public class MarketDataController(IMarketDataService marketDataService, ILogger<MarketDataController> logger)
     : ControllerBase
 {
+    [Authorize]
     [HttpPost("stocks/search")]
     public async Task<ActionResult<string>> SearchStockData(MarketDataDto request)
     {

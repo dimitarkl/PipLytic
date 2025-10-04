@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using server.Models;
 using server.Services;
@@ -9,6 +10,7 @@ namespace server.Controllers;
 [ApiController]
 public class UserController(IUserService userService, ILogger<UserService> logger) : ControllerBase
 {
+    [Authorize]
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentUser()
     {

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using server.Enums;
 
 namespace server.Entities;
 
@@ -11,7 +12,7 @@ public class User
     [Column("email")]
     [Required]
     [EmailAddress]
-    [MaxLength(256)]
+    [MaxLength(255)]
     public string Email { get; set; } = "";
 
     [Column("password_hash")]
@@ -19,12 +20,7 @@ public class User
     [MaxLength(255)]
     public string PasswordHash { get; set; } = "";
 
-    [Column("refresh_token")]
-    [MaxLength(512)]
-    public string? RefreshToken { get; set; }
-
-    [Column("refresh_token_expiry")]
-    public DateTime? RefreshTokenExpiry { get; set; }
-
     public ICollection<Trade> Trades { get; set; }
+
+    public EUserType EUserType { get; set; } = EUserType.Free;
 }

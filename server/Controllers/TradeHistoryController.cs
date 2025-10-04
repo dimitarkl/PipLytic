@@ -13,6 +13,7 @@ namespace server.Controllers;
 [ApiController]
 public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHistoryController> logger) : ControllerBase
 {
+    [Authorize]
     [HttpGet]
     public async Task<ActionResult<List<Trade>>> GetUserTrades()
     {
@@ -34,6 +35,7 @@ public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHis
         }
     }
 
+    [Authorize]
     [HttpPost("start")]
     public async Task<ActionResult<Trade>> StartTrade([FromBody] StartTradeDto tradeRequest)
     {
@@ -52,6 +54,7 @@ public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHis
         }
     }
 
+    [Authorize]
     [HttpPost("end")]
     public async Task<ActionResult<Trade>> EndTrade([FromBody] EndTradeDto tradeRequest)
     {
@@ -78,6 +81,7 @@ public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHis
         }
     }
 
+    [Authorize]
     [HttpGet("{tradeId}")]
     public async Task<ActionResult<Trade>> GetTrade(Guid tradeId)
     {

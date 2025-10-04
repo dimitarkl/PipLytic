@@ -41,8 +41,5 @@ public class Trade
     
     [Column("executed_at")]
     public long ExecutedAt { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-
     
-
 }

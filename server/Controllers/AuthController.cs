@@ -72,10 +72,7 @@ namespace server.Controllers
             if (string.IsNullOrEmpty(refreshToken))
                 return Unauthorized("Missing refresh token");
 
-            var result = await authService.RefreshTokenAsync(new RefreshTokenRequestDto
-            {
-                RefreshToken = refreshToken
-            });
+            var result = await authService.RefreshTokenAsync( refreshToken );
 
             if (result is null || result.AccessToken is null || result.RefreshToken is null)
                 return Unauthorized(new { message = "Invalid refresh token" });
