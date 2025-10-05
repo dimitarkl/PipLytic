@@ -22,5 +22,6 @@ public class User
 
     public ICollection<Trade> Trades { get; set; }
 
-    public EUserType EUserType { get; set; } = EUserType.Free;
+    [Column("user_type")]
+    public EUserType UserType { get; set; } = EUserType.Free;
 }

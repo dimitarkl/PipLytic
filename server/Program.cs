@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -52,8 +53,12 @@ namespace server
                         ValidateLifetime = true,
                         IssuerSigningKey = new SymmetricSecurityKey(
                             Encoding.UTF8.GetBytes(builder.Configuration["AppSettings:Token"]!)),
-                        ValidateIssuerSigningKey = true
+                        ValidateIssuerSigningKey = true,
+                        RoleClaimType = ClaimTypes.Role
                     };
+                    
+                    // Clear default claim type mappings to avoid transformation issues
+                    options.MapInboundClaims = false;
                 });
 
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -104,7 +109,8 @@ namespace server
             }
 
             app.UseHttpsRedirection();
-
+            
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
