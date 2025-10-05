@@ -23,7 +23,7 @@ public class MarketDataService : IMarketDataService
         _cache = cache;
     }
 
-    private TimeSeriesResponse? GetUserCacheIfExists(string userId, string symbol)
+    public TimeSeriesResponse? GetUserCacheIfExists(string userId, string symbol)
     {
         var userCacheKey = $"user:{userId}:symbol:{symbol}:5min";
         var userTtl = CacheUtils.UserCacheSlidingTtl;

@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using server.Data;
 using server.Services;
@@ -56,7 +57,7 @@ namespace server
                         ValidateIssuerSigningKey = true,
                         RoleClaimType = ClaimTypes.Role
                     };
-                    
+
                     // Clear default claim type mappings to avoid transformation issues
                     options.MapInboundClaims = false;
                 });
@@ -65,11 +66,25 @@ namespace server
             builder.Services.AddScoped<IMarketDataService, MarketDataService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<ITradeService, TradeService>();
+            builder.Services.AddScoped<IAiChatService, AiChatService>();
+            
+            builder.Services.AddScoped<GeminiChatCache>(provider => 
+                new GeminiChatCache(
+                    provider.GetRequiredService<IMemoryCache>(), 
+                    TimeSpan.FromMinutes(5) 
+                )
+            );
 
             builder.Services.AddHttpClient("TwelveData", client =>
             {
                 client.BaseAddress = new Uri("https://api.twelvedata.com/");
                 client.Timeout = TimeSpan.FromSeconds(10);
+            });
+
+            builder.Services.AddHttpClient("GeminiApi", client =>
+            {
+                client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
+                client.Timeout = TimeSpan.FromSeconds(60);
             });
 
             builder.Logging.ClearProviders();
@@ -109,7 +124,7 @@ namespace server
             }
 
             app.UseHttpsRedirection();
-            
+
             app.UseAuthentication();
             app.UseAuthorization();
 
