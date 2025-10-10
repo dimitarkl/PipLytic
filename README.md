@@ -33,6 +33,19 @@ PipLytic is built with a modern, scalable architecture:
 - Real-time P&L calculations as data streams
 - Trade validation to prevent over-leveraging
 
+### AI-Powered Trading Mentor
+![AI Chat Feature Screenshot](images/ai-chat-feature.png)
+- **Interactive Learning Assistant:** Powered by Google Gemini AI, acting as your personal trading mentor
+- **Historical Data Analysis:** Helps users understand patterns, trends, and anomalies in past market movements
+- **Strategy Education:** Teaches various trading strategies including trend analysis, pattern recognition, and event-impact assessment
+- **Guided Discovery:** Uses probing questions to help users reach informed conclusions about trading strategies
+- **Context-Aware:** Has access to your current chart data (OHLCV) up to your current time position in the simulation
+- **Conversational Learning:** Persistent chat history throughout your trading session for continuous mentorship
+- **Usage Tiers:**
+  - Free tier: Limited AI queries per session
+  - Premium tier: Unlimited AI mentor access
+- Session expires when market data refreshes to maintain accuracy
+
 ### Charting & Analytics
 - Professional candlestick charts with volume indicators
 - Responsive design for all devices
@@ -81,6 +94,8 @@ PipLytic is built with a modern, scalable architecture:
 - `POST /market/stocks/search` — Fetch historical stock data
 - `POST /users/{id}/trades/start` — Start a new trade
 - `POST /users/{id}/trades/end` — End/close a trade
+- `POST /api/ai-chat` — Send message to AI assistant
+- `GET /api/ai-chat` — Get AI chat history
 
 ## Technical Highlights
 
@@ -89,6 +104,8 @@ PipLytic is built with a modern, scalable architecture:
 - TradingView Lightweight Charts for professional charting
 - Context-based state management (UserContext, ThemeProvider)
 - Secure authentication and session management
+- Google Gemini AI integration for intelligent trading assistance
+- In-memory chat history caching with per-user session management
 - Clean separation of concerns in both client and server
 
 ## Development Status
