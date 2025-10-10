@@ -19,6 +19,7 @@ public class UserService(AppDbContext db) : IUserService
         {
             Id = user.Id.ToString(),
             Email = user.Email,
+            UserType = user.UserType,
         };
     }
 }

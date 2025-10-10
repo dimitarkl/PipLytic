@@ -23,10 +23,18 @@ public class AiChatController(ILogger<AiChatController> logger, IAiChatService a
         {
             return Unauthorized();
         }
+        catch (QuotaExceededException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (DataExpiredException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error connecting with Gemini");
-            return StatusCode(500,new {message = "An unexpected error occurred. Please try again later."} );
+            return StatusCode(500, new { message = "An unexpected error occurred. Please try again later." });
         }
     }
 
@@ -36,7 +44,7 @@ public class AiChatController(ILogger<AiChatController> logger, IAiChatService a
         try
         {
             var userId = HttpContext.GetUserId();
-            var response =  aiChatService.GetMessageHistory(userId);
+            var response = aiChatService.GetMessageHistory(userId);
             return Ok(response);
         }
         catch (NotFoundException)
@@ -46,8 +54,7 @@ public class AiChatController(ILogger<AiChatController> logger, IAiChatService a
         catch (Exception ex)
         {
             logger.LogError(ex, "Error connecting with Gemini");
-            return StatusCode(500,new {message = "An unexpected error occurred. Please try again later."} );
+            return StatusCode(500, new { message = "An unexpected error occurred. Please try again later." });
         }
     }
-    
 }

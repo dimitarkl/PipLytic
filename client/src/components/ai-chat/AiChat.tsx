@@ -41,9 +41,7 @@ export default function AiChat({ symbol = "IBM", endDate }: AiChatProps) {
         getChatHistory()
     }, [])
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
+    useEffect(() => scrollToBottom(), [messages]);
 
     const handleSendMessage = async () => {
         if (!inputMessage.trim() || isLoading) return;
@@ -74,17 +72,16 @@ export default function AiChat({ symbol = "IBM", endDate }: AiChatProps) {
                 const assistantMessage: Message = {
                     index: assistantIndex,
                     role: 'assistant',
-                    message: response?.data?.message || 'Sorry, I could not process that request.',
+                    message: response.data.message || 'Sorry, I could not process that request.',
                 };
                 return [...prev, assistantMessage];
             });
-        } catch (error) {
-            console.error('Error sending message:', error);
+        } catch (error: any) {
             setMessages(prev => {
                 const errorMessage: Message = {
                     index: prev.length,
                     role: 'assistant',
-                    message: 'Sorry, I encountered an error. Please try again.',
+                    message: 'Error: ' + error.response.data.message || 'Sorry, I encountered an error. Please try again.',
                 };
                 return [...prev, errorMessage];
             });
@@ -100,16 +97,17 @@ export default function AiChat({ symbol = "IBM", endDate }: AiChatProps) {
         }
     };
     const quickPrompts = [
-        "Identify trends",
-        "Should I buy or sell?",
-        "Analyze current price",
-        "What's the risk level?"
+        "What's the trend?",
+        "Explain this chart in one sentence",
+        "Why did volume spike?",
+        "Key support level?",
+        "Key resistance level?",
+        "One quick action I can take"
     ];
 
     const handleQuickPrompt = (prompt: string) => {
         setInputMessage(prompt);
     };
-    console.log(messages)
     return (
         <Card className="p-3 sm:p-6 flex flex-col h-full">
             {/* Messages Area */}

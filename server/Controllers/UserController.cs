@@ -28,6 +28,7 @@ public class UserController(IUserService userService, ILogger<UserService> logge
                 {
                     Id = userId,
                     Email = userData.Email,
+                    UserType = userData.UserType
                 }
             });
         }

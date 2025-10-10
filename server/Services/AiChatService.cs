@@ -30,22 +30,38 @@ public class AiChatService : IAiChatService
     public async Task<ChatResponse> SendMessage(Guid userId, ChatRequest request)
     {
         var user = await _db.Users.FindAsync(userId);
-        
+
         if (user == null) throw new NotFoundException("User Not Found");
 
         var data = _marketDataService.GetUserCacheIfExists(userId.ToString(), request.Symbol);
-        
-        if (data == null) throw new NotFoundException("Trading Data Expired Refresh The Page To Update it");
-        
 
-        ChatResponse response = null;
+        if (data == null) throw new DataExpiredException("Trading Data Expired Refresh The Page To Update it");
+
+        ChatResponse response;
+
+        var filteredData = data.Values
+            .Where(v => v.DateTime < request.EndDate)
+            .ToList();
 
 
-        // if (user.UserType == EUserType.Free)
-        //     response = await FreeSendMessage(user, request);
-        if (user.UserType == EUserType.Premium)
-            response = await PremiumSendMessage(userId, request, data.Values,request.EndDate);
-        
+        switch (user.UserType)
+        {
+            case EUserType.Free:
+                if (!user.TryUseAi())
+                    throw new QuotaExceededException("You have exceeded your free AI chat limit.");
+                
+                await _db.SaveChangesAsync();
+                response = await SendMessageAsync(userId, request.Message, filteredData, request.EndDate);
+
+                break;
+            case EUserType.Premium:
+                response = await SendMessageAsync(userId, request.Message, filteredData, request.EndDate);
+
+                break;
+            default:
+                throw new Exception("User Type Not Matching With Expected types");
+        }
+
         return response;
     }
 
@@ -54,22 +70,20 @@ public class AiChatService : IAiChatService
         var history = _cache.GetHistory(userId);
         if (history == null) throw new NotFoundException("Chat History Not Found");
 
-        return history.Select(content => new ChatResponse
+        return history.Select((content, index) => new ChatResponse
         {
+            Index = index,
             Role = content.Role,
             Message = string.Join(" ", content.Parts.Select(p => p.Text))
         }).ToList();
     }
 
     private async Task<ChatResponse> SendMessageAsync(Guid userId, string userMessage,
-        List<TimeSeriesResponseValue> filteredData,long endDate)
+        List<TimeSeriesResponseValue> filteredData, long endDate)
     {
         var history = _cache.GetHistory(userId);
 
-        var isFirstMessage = history.Count == 0;
-        var messageText = isFirstMessage
-            ? $"data: {JsonSerializer.Serialize(filteredData)}\n\n{userMessage}"
-            : $"system: ignore the data after {endDate} user:{userMessage}";
+        var compactDataString = SerializeToCompactString(filteredData);
 
         var payload = new GeminiRequestPayload
         {
@@ -77,18 +91,25 @@ public class AiChatService : IAiChatService
             {
                 Parts = new List<Part>
                 {
-                    new Part { Text = _configuration["AppSettings:GeminiSystemInstructions"] }
+                    new Part
+                    {
+                        Text = _configuration["AppSettings:GeminiSystemInstructions"] +
+                               $"\n\n--- FINANCIAL DATA ---\n" +
+                               $"{compactDataString}\n" + // Use the compact string
+                               $"The data ends at {endDate}. The user's query relates to this data."
+                    }
                 },
             },
             Contents = new List<Content>(history)
         };
 
+
         payload.Contents.Add(new Content
         {
             Role = "user",
-            Parts = new List<Part> { new Part { Text = messageText } }
+            Parts = new List<Part> { new Part { Text = userMessage } }
         });
-        
+
         var jsonPayload = JsonSerializer.Serialize(payload);
         var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
@@ -112,7 +133,7 @@ public class AiChatService : IAiChatService
 
         payload.Contents.Add(new Content
         {
-            Role = "MODEL",
+            Role = "model",
             Parts = new List<Part> { new Part { Text = reply } }
         });
 
@@ -122,6 +143,7 @@ public class AiChatService : IAiChatService
         {
             Role = "model",
             Message = reply,
+            Index = payload.Contents.Count
         };
     }
 
@@ -137,15 +159,38 @@ public class AiChatService : IAiChatService
             .GetString() ?? "";
     }
 
-    private async Task<ChatResponse> FreeSendMessage(User user, ChatRequest request)
+    private string SerializeToCompactString(List<TimeSeriesResponseValue> data)
     {
-        return null;
-    }
+        var sb = new StringBuilder();
 
-    private async Task<ChatResponse> PremiumSendMessage(Guid userId, ChatRequest request,
-        List<TimeSeriesResponseValue> filteredData,long endDate)
-    {
-        var response = await SendMessageAsync(userId, request.Message, filteredData,endDate);
-        return response;
+
+        var recentData = data;
+
+        //Only For Lowering High Token Usage
+        /*
+            const int MaxDataPoints = 20;
+             var recentData = data.Count > MaxDataPoints
+                 ? data.Skip(data.Count - MaxDataPoints)
+                 : data;
+        */
+
+        sb.AppendLine("OHLC Data (O,H,L,C, sorted oldest to newest. Prices rounded to 2 decimals):");
+
+        foreach (var item in recentData)
+        {
+            var o = decimal.Round(item.Open, 2);
+            var h = decimal.Round(item.High, 2);
+            var l = decimal.Round(item.Low, 2);
+            var c = decimal.Round(item.Close, 2);
+
+            string oStr = o.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            string hStr = h.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            string lStr = l.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            string cStr = c.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+
+            sb.AppendLine($"{oStr},{hStr},{lStr},{cStr}");
+        }
+
+        return sb.ToString();
     }
 }
