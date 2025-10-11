@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { InvestPoint } from "../Home";
+import { InvestPoint } from "../../Home";
 import { Card } from "@/components/ui/card";
 
 type InvestSectionProps = {
