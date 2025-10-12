@@ -34,6 +34,7 @@ public class MarketDataController(IMarketDataService marketDataService, ILogger<
     }
 
     [Authorize(Roles = "Premium")]
+    [EnableRateLimiting("stockRefresh")]
     [HttpPost("stocks/continue")]
     public async Task<ActionResult<string>> ContinueStockData(MarketDataDto request)
     {
@@ -58,6 +59,7 @@ public class MarketDataController(IMarketDataService marketDataService, ILogger<
     }
     
     [Authorize]
+    [EnableRateLimiting("stockRefresh")]
     [HttpPost("stocks/refresh")]
     public async Task<ActionResult<string>> RefreshStockData(MarketDataDto request)
     {
