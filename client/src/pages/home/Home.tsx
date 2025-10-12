@@ -7,6 +7,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import TradingPanel from './trading-panel/TradingPanel';
 import ChartDisplay from './chart-display/ChartDisplay';
 import { calculateCurrentValue, calculateProfitLoss } from '@/utils/trading';
+import { splitChartData } from '@/utils/charts';
 
 export type Meta = {
     "symbol": string,
@@ -122,16 +123,7 @@ export default function Home() {
                     symbol: "IBM",
                     interval: interval,
                 })
-                let tempChartData;
-                let tempAfterData;
-
-                if (chartData) {
-                    tempChartData = response.data.values.filter(v => v.time <= chartData[chartData.length - 1].time)
-                    tempAfterData = response.data.values.filter(v => v.time > chartData[chartData.length - 1].time)
-                } else {
-                    tempChartData = response.data.values.slice(0, response.data.values.length / 2)
-                    tempAfterData = response.data.values.slice(response.data.values.length / 2, response.data.values.length)
-                }
+                const { tempChartData, tempAfterData } = splitChartData(response.data.values, chartData)
 
                 setMeta(response.data.meta)
                 setChartData(tempChartData)
@@ -186,9 +178,45 @@ export default function Home() {
             endTrade()
     }, [afterData, endTrade, investPoint])
 
+    const getNextMonthData = async () => {
+        const lastDate = chartData && chartData.length > 0 ? chartData[chartData.length - 1].time : 0
+
+        try {
+            const response: SearchResponse = await api.post('/market/stocks/continue', {
+                symbol: "IBM",
+                interval: interval,
+                lastDate
+            })
+
+            setMeta(response.data.meta)
+            setAfterData(prev => [...(prev || []), ...response.data.values])
+        } catch (err) {
+            console.log(err)
+        }
+
+    }
+
+    const refreshData = async () => {
+        try {
+            const response: SearchResponse = await api.post('/market/stocks/refresh', {
+                symbol: "IBM",
+                interval: interval,
+            })
+            
+
+            const { tempChartData, tempAfterData } = splitChartData(response.data.values, undefined)
+
+            setMeta(response.data.meta)
+            setChartData(tempChartData)
+            setAfterData(tempAfterData)
+        } catch (err) {
+            console.log(err)
+        }
+
+    }
+
     const currentValue = useMemo(() => calculateCurrentValue(investPoint, chartData), [investPoint, chartData])
     const profitLoss = useMemo(() => calculateProfitLoss(investPoint, chartData), [investPoint, chartData])
-
     return (
         <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-7xl">
 
@@ -243,6 +271,8 @@ export default function Home() {
                     setReactive={setReactive}
                     setUpdateSpeed={setUpdateSpeed}
                     investPoint={investPoint}
+                    getNextMonthData={getNextMonthData}
+                    refreshData={refreshData}
                 />
 
                 <TradingPanel

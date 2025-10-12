@@ -3,9 +3,15 @@
 public static class CacheUtils
 {
 
-    public static string GenerateMarketDataCacheKey(string symbol, string interval)
+    public static string GenerateMarketDataCacheKey(string symbol, string startDate)
     {
-        return $"{symbol}:{interval}";
+        var yearMonth = startDate.Substring(0, 7);
+        return $"{symbol}:{yearMonth}";
+    }
+
+    public static string GenerateUserCacheKey(string userId, string symbol)
+    {
+        return $"user:{userId}:symbol:{symbol}";
     }
 
     public static TimeSpan MarketDataTtl => TimeSpan.FromMinutes(3);

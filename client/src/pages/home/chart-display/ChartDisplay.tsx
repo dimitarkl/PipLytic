@@ -13,6 +13,8 @@ type ChartDisplayProps = {
     setReactive: (v: boolean) => void;
     setUpdateSpeed: (n: number) => void;
     investPoint?: InvestPoint;
+    getNextMonthData: () => void
+    refreshData: () => void
 }
 
 export default function ChartDisplay(props: ChartDisplayProps) {
@@ -23,7 +25,10 @@ export default function ChartDisplay(props: ChartDisplayProps) {
         updateSpeed,
         setReactive,
         setUpdateSpeed,
-        investPoint } = props;
+        investPoint,
+        getNextMonthData,
+        refreshData
+    } = props;
 
     return (
         <div className="xl:col-start-1 xl:col-span-2 order-1 lg:order-1 space-y-4 sm:space-y-6">
@@ -32,14 +37,34 @@ export default function ChartDisplay(props: ChartDisplayProps) {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-3 sm:mb-4">
                         <h2 className="text-base sm:text-lg font-semibold">Price Chart</h2>
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                            {chartData && afterData.length < 1
+                            {chartData.length > 0 && afterData.length < 1
                                 ? <div className="p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg w-full">
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                                         <div>
                                             <p className="text-red-600 dark:text-red-400 text-sm font-medium">📊 Market data has ended</p>
                                             <p className="text-xs text-muted-foreground mt-1">No more historical points in this month.</p>
                                         </div>
+                                        <div className="flex items-center gap-3 ml-0 sm:ml-auto">
+                                            <div className="text-muted-foreground text-xl">→</div>
 
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={refreshData}
+                                                    >
+                                                    Update Data
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="default"
+                                                    className="text-white bg-gradient-to-r from-purple-500 to-pink-500 border-0"
+                                                    onClick={getNextMonthData}
+                                                >
+                                                    Next Month (Pro)
+                                                </Button>
+                                            </div>
+                                        </div>
 
                                     </div>
                                 </div>

@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Web;
@@ -16,6 +17,12 @@ public class MarketDataService : IMarketDataService
     private readonly IConfiguration _configuration;
     private readonly IMemoryCache _cache;
 
+
+    private static readonly ConcurrentDictionary<string, string> _symbolToCacheKey = new();
+
+    private const string DefaultInterval = "5min";
+    private const string ApiKeyConfigPath = "AppSettings:TwelveDataApiKey";
+
     public MarketDataService(IHttpClientFactory httpClientFactory, IConfiguration configuration, IMemoryCache cache)
     {
         _client = httpClientFactory.CreateClient("TwelveData");
@@ -25,7 +32,7 @@ public class MarketDataService : IMarketDataService
 
     public TimeSeriesResponse? GetUserCacheIfExists(string userId, string symbol)
     {
-        var userCacheKey = $"user:{userId}:symbol:{symbol}:5min";
+        var userCacheKey = CacheUtils.GenerateUserCacheKey(userId, symbol);
         var userTtl = CacheUtils.UserCacheSlidingTtl;
 
         if (_cache.TryGetValue(userCacheKey, out TimeSeriesResponse cachedData))
@@ -39,26 +46,36 @@ public class MarketDataService : IMarketDataService
 
     private async Task<TimeSeriesResponse> GetSharedFiveMinCacheAsync(string symbol)
     {
-        var cacheKey = CacheUtils.GenerateMarketDataCacheKey(symbol, "5min");
+        if (_symbolToCacheKey.TryGetValue(symbol, out var existingCacheKey))
+        {
+            if (_cache.TryGetValue(existingCacheKey, out TimeSeriesResponse cachedData))
+            {
+                return cachedData;
+            }
+
+            _symbolToCacheKey.TryRemove(symbol, out _);
+        }
+
+        var (startDate, endDate) = DateTimeUtils.GenerateRandomMonth();
+        var cacheKey = CacheUtils.GenerateMarketDataCacheKey(symbol, startDate);
         var sharedTtl = CacheUtils.MarketDataTtl;
 
-        if (_cache.TryGetValue(cacheKey, out TimeSeriesResponse cachedData))
-            return cachedData;
-
-
-        var url = BuildTimeSeriesUrl(new MarketDataDto { Symbol = symbol, Interval = "5min" });
+        var url = BuildTimeSeriesUrl(new MarketDataDto { Symbol = symbol, Interval = DefaultInterval },
+            (startDate, endDate));
 
         var response = await SendRequestAsync(url);
         var data = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
 
         _cache.Set(cacheKey, data, sharedTtl);
 
+        _symbolToCacheKey[symbol] = cacheKey;
+
         return data;
     }
 
     private void StoreUserCache(string userId, string symbol, TimeSeriesResponse baseData)
     {
-        var userCacheKey = $"user:{userId}:symbol:{symbol}:5min";
+        var userCacheKey = CacheUtils.GenerateUserCacheKey(userId, symbol);
         var userTtl = CacheUtils.UserCacheSlidingTtl;
 
         var userDataCopy = baseData.DeepClone();
@@ -78,20 +95,57 @@ public class MarketDataService : IMarketDataService
 
         StoreUserCache(userId, request.Symbol, sharedBase);
 
-        var userCacheForRequest = GetUserCacheIfExists(userId, request.Symbol);
-        var resampledData = TimeSeriesResampler.Resample(request.Interval, userCacheForRequest);
+        var resampledData = TimeSeriesResampler.Resample(request.Interval, sharedBase);
 
         return MarketDataMapper.MapToClientResponse(resampledData);
     }
 
-    private string BuildTimeSeriesUrl(MarketDataDto request)
+    public async Task<StocksSearchResponseDto> ContinueStocksData(MarketDataDto request, string userId)
     {
-        var (startDate, endDate) = DateTimeUtils.GenerateRandomMonth();
+        var userCacheKey = CacheUtils.GenerateUserCacheKey(userId, request.Symbol);
+        _cache.Remove(userCacheKey);
+
+        if (request.LastDate == null) throw new ArgumentException("LastDate cannot be null.");
+
+        var nextMonth = DateTimeOffset.FromUnixTimeSeconds(request.LastDate.Value).UtcDateTime.AddMonths(1);
+        var url = BuildTimeSeriesUrl(request, DateTimeUtils.GetMonthDateRange(nextMonth));
+        var response = await SendRequestAsync(url);
+        var data = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
+
+        StoreUserCache(userId, request.Symbol, data);
+
+        var resampledData = TimeSeriesResampler.Resample(request.Interval, data);
+
+        return MarketDataMapper.MapToClientResponse(resampledData);
+    }
+
+    public async Task<StocksSearchResponseDto> RefreshStocksData(MarketDataDto request, string userId)
+    {
+        var userCacheKey = CacheUtils.GenerateUserCacheKey(userId, request.Symbol);
+        
+        //Clear User & Symbol Cache
+        //Deletes the cache for everyone(in the future could be fixed/or not)
+        _cache.Remove(userCacheKey);
+        _symbolToCacheKey.TryRemove(request.Symbol, out _);
+        
+        var sharedBase = await GetSharedFiveMinCacheAsync(request.Symbol);
+
+        StoreUserCache(userId, request.Symbol, sharedBase);
+
+        var resampledData = TimeSeriesResampler.Resample(request.Interval, sharedBase);
+
+        return MarketDataMapper.MapToClientResponse(resampledData);
+    }
+
+
+    private string BuildTimeSeriesUrl(MarketDataDto request, (string startDate, string endDate)? range = null)
+    {
+        var (startDate, endDate) = range ?? DateTimeUtils.GenerateRandomMonth();
         var queryParams = new Dictionary<string, string?>
         {
             ["symbol"] = request.Symbol,
-            ["interval"] = "5min",
-            ["apikey"] = _configuration.GetValue<string>("AppSettings:TwelveDataApiKey"),
+            ["interval"] = DefaultInterval,
+            ["apikey"] = _configuration.GetValue<string>(ApiKeyConfigPath),
             ["start_date"] = startDate,
             ["end_date"] = endDate
         };

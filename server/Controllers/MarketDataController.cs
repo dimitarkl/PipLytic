@@ -1,13 +1,9 @@
-﻿using System.Globalization;
-using System.Security.Claims;
-using System.Web;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using server.Models;
 using server.Services;
-using Microsoft.Extensions.Logging;
-
+using server.Extensions;
 
 namespace server.Controllers;
 
@@ -22,13 +18,58 @@ public class MarketDataController(IMarketDataService marketDataService, ILogger<
     {
         try
         {
-            var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Unauthorized();
-
-            var result = await marketDataService.QueryStocksData(request, userIdClaim);
+            var userId = HttpContext.GetUserId();
+            var result = await marketDataService.QueryStocksData(request, userId.ToString());
             return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching stock data for {Symbol}", request.Symbol);
+            return StatusCode(500, "An unexpected error occurred. Please try again later.");
+        }
+    }
+
+    [Authorize(Roles = "Premium")]
+    [HttpPost("stocks/continue")]
+    public async Task<ActionResult<string>> ContinueStockData(MarketDataDto request)
+    {
+        if (request.LastDate == null)
+            return BadRequest(new { message = "Month field is required" });
+        
+        try
+        {
+            var userId = HttpContext.GetUserId();
+            var result = await marketDataService.ContinueStocksData(request, userId.ToString());
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching stock data for {Symbol}", request.Symbol);
+            return StatusCode(500, "An unexpected error occurred. Please try again later.");
+        }
+    }
+    
+    [Authorize]
+    [HttpPost("stocks/refresh")]
+    public async Task<ActionResult<string>> RefreshStockData(MarketDataDto request)
+    {
+        try
+        {
+            var userId = HttpContext.GetUserId();
+            var result = await marketDataService.RefreshStocksData(request, userId.ToString());
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
         catch (Exception ex)
         {
