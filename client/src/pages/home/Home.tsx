@@ -8,6 +8,9 @@ import TradingPanel from './trading-panel/TradingPanel';
 import ChartDisplay from './chart-display/ChartDisplay';
 import { calculateCurrentValue, calculateProfitLoss } from '@/utils/trading';
 import { splitChartData } from '@/utils/charts';
+import Error from '@/components/error/Error';
+import { handleError } from '@/utils/errors';
+import Toaster from '@/components/toaster/Toaster';
 
 export type Meta = {
     "symbol": string,
@@ -45,21 +48,24 @@ export default function Home() {
     const [balance, setBalance] = useState(1000)
     const [updateSpeed, setUpdateSpeed] = useState<number>(UPDATE_SPEED)
 
+    const [error, setError] = useState<string | null>(null)
+    const [toaster, setToaster] = useState<string | null>(null)
+
     const handleStartTrade = useCallback(async (amount: number, type: 'short' | 'long') => {
         if (amount <= 0) return
 
         if (balance < amount) {
-            alert('Not enough balance')
+            alert('Insufficient balance')
             return
         }
 
         if (!chartData || chartData.length === 0) {
-            alert('Market data is not available yet')
+            alert('Market data not available')
             return
         }
 
         if (!meta?.symbol) {
-            alert('Trading symbol unavailable')
+            alert('Trading symbol is unavailable')
             return
         }
 
@@ -83,9 +89,9 @@ export default function Home() {
             })
             setReactive(true)
             setBalance(prev => prev - amount)
-        } catch (error) {
-            console.error('Failed to start trade', error)
-            alert('Failed to start trade')
+        } catch (err) {
+            const error = handleError(err) ?? "Failed to start trade"
+            setError(error)
         }
     }, [balance, chartData, meta, user])
 
@@ -110,9 +116,10 @@ export default function Home() {
             setBalance(prev => prev + currentValue)
             setInvestPoint(undefined)
             setTradeId(undefined)
-        } catch (error) {
-            console.error('Failed to end trade', error)
-            alert('Failed to end trade')
+            setToaster("Trade ended successfully")
+        } catch (err) {
+            const error = handleError(err) ?? "Failed to end trade"
+            setError(error)
         }
     }, [chartData, investPoint, tradeId, user])
 
@@ -129,7 +136,8 @@ export default function Home() {
                 setChartData(tempChartData)
                 setAfterData(tempAfterData)
             } catch (err) {
-                console.log(err)
+                const error = handleError(err) ?? "Failed to fetch stock data"
+                setError(error)
             }
         }
         getChartData()
@@ -191,7 +199,8 @@ export default function Home() {
             setMeta(response.data.meta)
             setAfterData(prev => [...(prev || []), ...response.data.values])
         } catch (err) {
-            console.log(err)
+            const error = handleError(err) ?? "Failed to fetch next month's stock data"
+            setError(error)
         }
 
     }
@@ -202,7 +211,6 @@ export default function Home() {
                 symbol: "IBM",
                 interval: interval,
             })
-            
 
             const { tempChartData, tempAfterData } = splitChartData(response.data.values, undefined)
 
@@ -210,7 +218,8 @@ export default function Home() {
             setChartData(tempChartData)
             setAfterData(tempAfterData)
         } catch (err) {
-            console.log(err)
+            const error = handleError(err) ?? "Failed to refresh stock data"
+            setError(error)
         }
 
     }
@@ -283,7 +292,9 @@ export default function Home() {
                     onStartTrade={handleStartTrade}
                     onCloseTrade={endTrade}
                 />
+                {toaster && <Toaster message={toaster} onClose={() => setToaster(null)} />}
 
+                {error && <Error message={error} onClose={() => setError(null)} />}
             </div>
         </div>
     )
