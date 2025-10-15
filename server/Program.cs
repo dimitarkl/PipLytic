@@ -32,7 +32,7 @@ namespace server
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
             builder.Services.AddMemoryCache();
-            
+
             // Rate Limiting
             builder.Services.AddRateLimiter(options =>
             {
@@ -43,7 +43,7 @@ namespace server
                     limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     limiterOptions.QueueLimit = 0;
                 });
-                
+
                 options.OnRejected = async (context, cancellationToken) =>
                 {
                     context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
@@ -53,19 +53,20 @@ namespace server
                         retryAfter = "1 minute"
                     }, cancellationToken);
                 };
-                
+
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 {
                     var endpoint = context.GetEndpoint();
-                    var hasStockRefreshPolicy = endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName == "stockRefresh";
-                    
+                    var hasStockRefreshPolicy =
+                        endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName == "stockRefresh";
+
                     if (!hasStockRefreshPolicy)
                     {
                         return RateLimitPartition.GetNoLimiter<string>("global");
                     }
-                    
+
                     var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
-                    
+
                     return RateLimitPartition.GetFixedWindowLimiter(userId, _ => new FixedWindowRateLimiterOptions
                     {
                         PermitLimit = 1,
@@ -75,7 +76,7 @@ namespace server
                     });
                 });
             });
-            
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowReactApp", policy =>
@@ -113,11 +114,12 @@ namespace server
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<ITradeService, TradeService>();
             builder.Services.AddScoped<IAiChatService, AiChatService>();
-            
-            builder.Services.AddScoped<GeminiChatCache>(provider => 
+            builder.Services.AddScoped<ICompaniesService, CompaniesService>();
+
+            builder.Services.AddScoped<GeminiChatCache>(provider =>
                 new GeminiChatCache(
-                    provider.GetRequiredService<IMemoryCache>(), 
-                    TimeSpan.FromMinutes(5) 
+                    provider.GetRequiredService<IMemoryCache>(),
+                    TimeSpan.FromMinutes(5)
                 )
             );
 
@@ -169,6 +171,12 @@ namespace server
             {
                 app.MapOpenApi();
                 builder.Configuration.AddUserSecrets<Program>();
+            }
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                DataSeeder.SeedTopCompanies(db);
             }
 
             app.UseHttpsRedirection();
