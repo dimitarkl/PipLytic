@@ -21,47 +21,24 @@ namespace server.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<TokenResponseDto>> Register(UserDto request)
         {
-            try
-            {
-                var result = await authService.RegisterAsync(request);
-                var cookieOptions = authService.CreateCookieOptions();
+            var result = await authService.RegisterAsync(request);
+            var cookieOptions = authService.CreateCookieOptions();
 
-                Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
+            Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
 
-                return Ok(new { accessToken = result.AccessToken });
-            }
-            catch (UserAlreadyExistsException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, "An unexpected error occurred. Please try again later.");
-            }
+            return Ok(new { accessToken = result.AccessToken });
         }
 
         [HttpPost("login")]
         public async Task<ActionResult<TokenResponseDto>> Login(UserDto request)
         {
-            try
-            {
-                var result = await authService.LoginAsync(request);
+            var result = await authService.LoginAsync(request);
 
-                var cookieOptions = authService.CreateCookieOptions();
+            var cookieOptions = authService.CreateCookieOptions();
 
-                Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
+            Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
 
-                // Return access token as JSON
-                return Ok(new { accessToken = result.AccessToken });
-            }
-            catch (InvalidCredentialsException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, "An unexpected error occurred.");
-            }
+            return Ok(new { accessToken = result.AccessToken });
         }
 
         [HttpPost("refresh-token")]
@@ -72,10 +49,11 @@ namespace server.Controllers
             if (string.IsNullOrEmpty(refreshToken))
                 return Unauthorized("Missing refresh token");
 
-            var result = await authService.RefreshTokenAsync( refreshToken );
+            var result = await authService.RefreshTokenAsync(refreshToken);
 
             if (result is null || result.AccessToken is null || result.RefreshToken is null)
                 return Unauthorized(new { message = "Invalid refresh token" });
+
             var cookieOptions = authService.CreateCookieOptions();
             Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
             return Ok(new { accessToken = result.AccessToken });

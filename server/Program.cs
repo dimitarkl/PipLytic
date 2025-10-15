@@ -9,6 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using server.Data;
 using server.Services;
+using server.Middleware;
 
 namespace server
 {
@@ -144,6 +145,9 @@ namespace server
             app.UseCors("AllowReactApp");
 
             app.UseRateLimiter();
+
+            // Register global exception handling middleware early so it can catch downstream exceptions
+            app.UseMiddleware<ExceptionMiddleware>();
 
             // Log every HTTP request
             app.Use(async (context, next) =>

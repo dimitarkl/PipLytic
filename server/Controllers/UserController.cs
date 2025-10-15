@@ -14,28 +14,20 @@ public class UserController(IUserService userService, ILogger<UserService> logge
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentUser()
     {
-        try
-        {
-            var user = HttpContext.User;
-            if (user.Identity?.IsAuthenticated != true)
-                return Unauthorized(new { message = "User not authenticated" });
+        var user = HttpContext.User;
+        if (user.Identity?.IsAuthenticated != true)
+            return Unauthorized(new { message = "User not authenticated" });
 
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userData = await userService.GetUser(userId);
-            return Ok(new
-            {
-                user = new CurrentUserDto
-                {
-                    Id = userId,
-                    Email = userData.Email,
-                    UserType = userData.UserType
-                }
-            });
-        }
-        catch (Exception ex)
+        var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userData = await userService.GetUser(userId);
+        return Ok(new
         {
-            logger.LogError("Error while fetching user" + ex.Message);
-            return StatusCode(500, "An unexpected error occurred. Please try again later.");
-        }
+            user = new CurrentUserDto
+            {
+                Id = userId,
+                Email = userData.Email,
+                UserType = userData.UserType
+            }
+        });
     }
 }

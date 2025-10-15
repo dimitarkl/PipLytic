@@ -13,48 +13,16 @@ public class AiChatController(ILogger<AiChatController> logger, IAiChatService a
     [HttpPost]
     public async Task<IActionResult> SendMessage([FromBody] ChatRequest request)
     {
-        try
-        {
-            var userId = HttpContext.GetUserId();
-            var response = await aiChatService.SendMessage(userId, request);
-            return Ok(response);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized();
-        }
-        catch (QuotaExceededException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (DataExpiredException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error connecting with Gemini");
-            return StatusCode(500, new { message = "An unexpected error occurred. Please try again later." });
-        }
+        var userId = HttpContext.GetUserId();
+        var response = await aiChatService.SendMessage(userId, request);
+        return Ok(response);
     }
 
     [HttpGet]
     public IActionResult GetHistory()
     {
-        try
-        {
-            var userId = HttpContext.GetUserId();
-            var response = aiChatService.GetMessageHistory(userId);
-            return Ok(response);
-        }
-        catch (NotFoundException)
-        {
-            return NotFound();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error connecting with Gemini");
-            return StatusCode(500, new { message = "An unexpected error occurred. Please try again later." });
-        }
+        var userId = HttpContext.GetUserId();
+        var response = aiChatService.GetMessageHistory(userId);
+        return Ok(response);
     }
 }
