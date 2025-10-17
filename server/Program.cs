@@ -1,9 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Security.Claims;
-using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
@@ -33,50 +31,6 @@ namespace server
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
             builder.Services.AddMemoryCache();
-
-            // Rate Limiting
-            builder.Services.AddRateLimiter(options =>
-            {
-                options.AddFixedWindowLimiter("stockRefresh", limiterOptions =>
-                {
-                    limiterOptions.PermitLimit = 1;
-                    limiterOptions.Window = TimeSpan.FromMinutes(1);
-                    limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                    limiterOptions.QueueLimit = 0;
-                });
-
-                options.OnRejected = async (context, cancellationToken) =>
-                {
-                    context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                    await context.HttpContext.Response.WriteAsJsonAsync(new
-                    {
-                        message = "Too many requests. Please try again later.",
-                        retryAfter = "1 minute"
-                    }, cancellationToken);
-                };
-
-                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-                {
-                    var endpoint = context.GetEndpoint();
-                    var hasStockRefreshPolicy =
-                        endpoint?.Metadata.GetMetadata<EnableRateLimitingAttribute>()?.PolicyName == "stockRefresh";
-
-                    if (!hasStockRefreshPolicy)
-                    {
-                        return RateLimitPartition.GetNoLimiter<string>("global");
-                    }
-
-                    var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
-
-                    return RateLimitPartition.GetFixedWindowLimiter(userId, _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 1,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        QueueLimit = 0
-                    });
-                });
-            });
 
             builder.Services.AddCors(options =>
             {
@@ -144,7 +98,8 @@ namespace server
 
             app.UseCors("AllowReactApp");
 
-            app.UseRateLimiter();
+            // Custom success-based rate limiting middleware
+            app.UseMiddleware<SuccessBasedRateLimitMiddleware>();
 
             // Register global exception handling middleware early so it can catch downstream exceptions
             app.UseMiddleware<ExceptionMiddleware>();

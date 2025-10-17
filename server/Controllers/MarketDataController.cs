@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using server.Models;
 using server.Services;
 using server.Extensions;
+using server.Middleware;
 
 namespace server.Controllers;
 
@@ -22,7 +22,7 @@ public class MarketDataController(IMarketDataService marketDataService, ILogger<
     }
 
     [Authorize(Roles = "Premium")]
-    [EnableRateLimiting("stockRefresh")]
+    [SuccessBasedRateLimit("stockRefresh", 1)]
     [HttpPost("stocks/continue")]
     public async Task<ActionResult<string>> ContinueStockData(MarketDataDto request)
     {
@@ -36,7 +36,7 @@ public class MarketDataController(IMarketDataService marketDataService, ILogger<
     }
 
     [Authorize]
-    [EnableRateLimiting("stockRefresh")]
+    [SuccessBasedRateLimit("stockRefresh", 1)]
     [HttpPost("stocks/refresh")]
     public async Task<ActionResult<string>> RefreshStockData(MarketDataDto request)
     {
