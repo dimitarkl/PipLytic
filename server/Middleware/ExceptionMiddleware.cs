@@ -29,7 +29,7 @@ public class ExceptionMiddleware
         {
             _logger.LogError(
                 ex,
-                "Unhandled exception at {Path} {Method}. User: {User}",
+                "Unhandled exception at {Path} {Method}",
                 context.Request.Path,
                 context.Request.Method);
 
@@ -37,40 +37,52 @@ public class ExceptionMiddleware
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var statusCode = HttpStatusCode.InternalServerError;
         var errors = new List<string>();
 
         switch (exception)
         {
+            case NotImplementedException e:
+                statusCode = HttpStatusCode.NotImplemented;
+                errors.Add("This feature is not yet implemented.");
+                _logger.LogWarning("NotImplementedException: {Message} at {Path}", e.Message, context.Request.Path);
+                break;
             case NotFoundException e:
                 statusCode = HttpStatusCode.NotFound;
                 errors.Add(e.Message);
+                _logger.LogWarning("NotFoundException: {Message} at {Path}", e.Message, context.Request.Path);
                 break;
             case ForbiddenException e:
                 statusCode = HttpStatusCode.Forbidden;
                 errors.Add(e.Message);
+                _logger.LogWarning("ForbiddenException: {Message} at {Path}", e.Message, context.Request.Path);
                 break;
             case InvalidCredentialsException e:
                 statusCode = HttpStatusCode.BadRequest;
                 errors.Add(e.Message);
+                _logger.LogWarning("InvalidCredentialsException: {Message} at {Path}", e.Message, context.Request.Path);
                 break;
             case QuotaExceededException e:
                 statusCode = (HttpStatusCode)429;
                 errors.Add(e.Message);
+                _logger.LogWarning("QuotaExceededException: {Message} at {Path}", e.Message, context.Request.Path);
                 break;
             case DataExpiredException e:
                 statusCode = HttpStatusCode.BadRequest;
                 errors.Add(e.Message);
+                _logger.LogWarning("DataExpiredException: {Message} at {Path}", e.Message, context.Request.Path);
                 break;
             case UnauthorizedAccessException e:
                 statusCode = HttpStatusCode.Unauthorized;
                 errors.Add(e.Message ?? "Unauthorized");
+                _logger.LogWarning("UnauthorizedAccessException: {Message} at {Path}", e.Message ?? "Unauthorized", context.Request.Path);
                 break;
             default:
                 statusCode = HttpStatusCode.InternalServerError;
                 errors.Add("An unexpected error occurred. Please try again later.");
+                _logger.LogError(exception, "Unexpected exception at {Path}: {Message}", context.Request.Path, exception.Message);
                 break;
         }
 

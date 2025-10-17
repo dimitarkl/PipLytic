@@ -5,13 +5,12 @@ using server.Exceptions;
 
 namespace server.Services;
 
-public class CompaniesService : ICompaniesService
+public class CompaniesService(AppDbContext db) : ICompaniesService
 {
-    private readonly AppDbContext _db;
 
     public async Task<List<Company>> GetCompanies()
     {
-        var companies = await _db.Companies.ToListAsync();
+        var companies = await db.Companies.ToListAsync();
         if (companies.Count == 0)
             throw new NotFoundException("No companies found");
         return companies;

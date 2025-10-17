@@ -36,10 +36,10 @@ namespace server
             {
                 options.AddPolicy("AllowReactApp", policy =>
                 {
-                    policy.WithOrigins("http://localhost:5000") // your React dev server
+                    policy.WithOrigins("http://localhost:5000") 
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .AllowCredentials(); // important for cookies
+                        .AllowCredentials();
                 });
             });
 
@@ -60,7 +60,6 @@ namespace server
                         RoleClaimType = ClaimTypes.Role
                     };
 
-                    // Clear default claim type mappings to avoid transformation issues
                     options.MapInboundClaims = false;
                 });
 
@@ -98,13 +97,10 @@ namespace server
 
             app.UseCors("AllowReactApp");
 
-            // Custom success-based rate limiting middleware
             app.UseMiddleware<SuccessBasedRateLimitMiddleware>();
 
-            // Register global exception handling middleware early so it can catch downstream exceptions
             app.UseMiddleware<ExceptionMiddleware>();
 
-            // Log every HTTP request
             app.Use(async (context, next) =>
             {
                 var method = context.Request.Method;
