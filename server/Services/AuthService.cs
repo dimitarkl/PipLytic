@@ -8,6 +8,8 @@ using server.Data;
 using server.Entities;
 using server.Models;
 using server.Exceptions;
+using Microsoft.AspNetCore.Hosting; // added for IWebHostEnvironment
+using Microsoft.Extensions.Hosting; // added for IsDevelopment()
 
 namespace server.Services;
 
@@ -15,17 +17,19 @@ public class AuthService : IAuthService
 {
     private readonly AppDbContext _db;
     private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _environment; // added
 
-    public AuthService(AppDbContext db, IConfiguration configuration)
+    public AuthService(AppDbContext db, IConfiguration configuration, IWebHostEnvironment environment)
     {
         _configuration = configuration;
         _db = db;
+        _environment = environment;
     }
 
     public async Task<TokenResponseDto> RegisterAsync(UserDto request)
     {
         if (await _db.Users.AnyAsync(u => u.Email == request.Email))
-            throw new UserAlreadyExistsException($"User already exists");
+            throw new UserAlreadyExistsException($"A user with email '{request.Email}' already exists");
 
 
         var user = new User();
@@ -174,11 +178,10 @@ public class AuthService : IAuthService
 
     public CookieOptions CreateCookieOptions()
     {
-        //TODO Write Logic For deciding Secure
         return new CookieOptions
         {
             HttpOnly = true,
-            Secure = false,
+            Secure = !_environment.IsDevelopment(),
             SameSite = SameSiteMode.Strict,
             Expires = DateTime.UtcNow.AddDays(30),
             Path = "/"

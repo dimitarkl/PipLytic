@@ -1,23 +1,21 @@
 ﻿using server.Data;
+using server.Exceptions;
 using server.Models;
 
 namespace server.Services;
 
 public class UserService(AppDbContext db) : IUserService
 {
-    public async Task<CurrentUserDto> GetUser(string userId)
+    public async Task<CurrentUserDto> GetUser(Guid userId)
     {
-        if (!Guid.TryParse(userId, out Guid userGuid))
-            throw new ArgumentException("Invalid user ID format", nameof(userId));
-
-        var user = await db.Users.FindAsync(userGuid);
+        var user = await db.Users.FindAsync(userId);
 
         if (user == null)
-            throw new KeyNotFoundException("User not found");
+            throw new NotFoundException("User not found");
 
         return new CurrentUserDto
         {
-            Id = user.Id.ToString(),
+            Id = user.Id,
             Email = user.Email,
             UserType = user.UserType,
         };

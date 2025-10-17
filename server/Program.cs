@@ -17,8 +17,11 @@ namespace server
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseNpgsql(connectionString));
 
             builder.Services.AddControllers();
 
@@ -34,9 +37,12 @@ namespace server
 
             builder.Services.AddCors(options =>
             {
+                var allowedOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>()
+                    ?? new[] { "http://localhost:5000" }; // Fallback if config missing
+
                 options.AddPolicy("AllowReactApp", policy =>
                 {
-                    policy.WithOrigins("http://localhost:5000") 
+                    policy.WithOrigins(allowedOrigins)
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();
@@ -112,7 +118,7 @@ namespace server
             });
 
             //Check if Db Exists
-            DatabaseInitializer.EnsureDatabaseExists(builder.Configuration.GetConnectionString("DefaultConnection"));
+            DatabaseInitializer.EnsureDatabaseExists(connectionString);
 
             //Migrations
             using (var scope = app.Services.CreateScope())

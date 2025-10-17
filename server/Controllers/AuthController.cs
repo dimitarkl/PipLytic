@@ -26,7 +26,7 @@ namespace server.Controllers
 
             Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
 
-            return Ok(new { accessToken = result.AccessToken });
+            return Created("/api/auth/login", new { accessToken = result.AccessToken, message = "User created" });
         }
 
         [HttpPost("login")]

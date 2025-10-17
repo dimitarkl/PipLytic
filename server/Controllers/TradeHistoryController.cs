@@ -9,7 +9,7 @@ using server.Services;
 
 namespace server.Controllers;
 
-[Route("api/users/{userId}/trades")]
+[Route("api/users/trades")]
 [ApiController]
 public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHistoryController> logger) : ControllerBase
 {
@@ -24,7 +24,7 @@ public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHis
     }
 
     [Authorize]
-    [HttpPost("start")]
+    [HttpPost]
     public async Task<ActionResult<Trade>> StartTrade([FromBody] StartTradeDto tradeRequest)
     {
         var userId = HttpContext.GetUserId();
@@ -35,7 +35,7 @@ public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHis
     }
 
     [Authorize]
-    [HttpPost("end")]
+    [HttpPatch]
     public async Task<ActionResult<Trade>> EndTrade([FromBody] EndTradeDto tradeRequest)
     {
         var userId = HttpContext.GetUserId();
@@ -49,6 +49,7 @@ public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHis
     [HttpGet("{tradeId}")]
     public async Task<ActionResult<Trade>> GetTrade(Guid tradeId)
     {
+
         var trade = await tradeService.GetTrade(tradeId);
         return Ok(trade);
     }

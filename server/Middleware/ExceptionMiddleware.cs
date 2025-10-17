@@ -60,7 +60,7 @@ public class ExceptionMiddleware
                 _logger.LogWarning("ForbiddenException: {Message} at {Path}", e.Message, context.Request.Path);
                 break;
             case InvalidCredentialsException e:
-                statusCode = HttpStatusCode.BadRequest;
+                statusCode = HttpStatusCode.Unauthorized;
                 errors.Add(e.Message);
                 _logger.LogWarning("InvalidCredentialsException: {Message} at {Path}", e.Message, context.Request.Path);
                 break;

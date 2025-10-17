@@ -6,9 +6,9 @@ public class StartTradeDto
 {
     [Required] public decimal AmountInvested { get; set; }
     
-    public string Type { get; set; }
+    [Required] public string Type { get; set; }
 
-    public string Symbol { get; set; }
+    [Required] public string Symbol { get; set; }
 }
 
 public class EndTradeDto

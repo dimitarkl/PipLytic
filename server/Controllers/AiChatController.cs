@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using server.Exceptions;
 using server.Extensions;
 using server.Models;
@@ -10,6 +11,7 @@ namespace server.Controllers;
 [Route("api/ai-chat")]
 public class AiChatController(ILogger<AiChatController> logger, IAiChatService aiChatService) : ControllerBase
 {
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> SendMessage([FromBody] ChatRequest request)
     {
@@ -17,7 +19,8 @@ public class AiChatController(ILogger<AiChatController> logger, IAiChatService a
         var response = await aiChatService.SendMessage(userId, request);
         return Ok(response);
     }
-
+    
+    [Authorize]
     [HttpGet]
     public IActionResult GetHistory()
     {

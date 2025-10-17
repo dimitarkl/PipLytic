@@ -41,7 +41,7 @@ public class TradeService : ITradeService
         if (!Guid.TryParse(request.TradeId, out Guid tradeId))
             throw new Exception("Invalid trade ID format.");
 
-        Trade trade = await _db.Trades.FindAsync(tradeId);
+        var trade = await _db.Trades.FindAsync(tradeId);
 
         if (trade == null)
             throw new NotFoundException("Trade not found");
@@ -57,17 +57,8 @@ public class TradeService : ITradeService
         return trade;
     }
 
-    public async Task<Trade> GetTrade(Guid tradeId)
-    {
-        Trade trade = await _db.Trades.FindAsync(tradeId);
-
-        if (trade == null)
-            throw new NotFoundException($"Trade {tradeId} not found.");
-
-        return trade;
-    }
-
-
+    public async Task<Trade> GetTrade(Guid tradeId) => await _db.Trades.FindAsync(tradeId);
+    
     public async Task<List<Trade>> GetUserTrades(Guid userId)
     {
         var trades = await _db.Trades
