@@ -1,8 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Globalization;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Web;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Caching.Memory;
 using server.Models;
@@ -18,7 +14,10 @@ public class MarketDataService : IMarketDataService
     private readonly IMemoryCache _cache;
 
 
-    private static readonly ConcurrentDictionary<string, string> _symbolToCacheKey = new();
+    private static readonly ConcurrentDictionary<string, string> SymbolToCacheKey = new();
+    
+    // "userId:symbol" -> "user:userId:stock:data:SYMBOL:YYYY-MM"
+    private static readonly ConcurrentDictionary<string, string> UserCacheKeys = new();
 
     private const string DefaultInterval = "5min";
     private const string ApiKeyConfigPath = "AppSettings:TwelveDataApiKey";
@@ -32,28 +31,35 @@ public class MarketDataService : IMarketDataService
 
     public TimeSeriesResponse? GetUserCacheIfExists(string userId, string symbol)
     {
-        var userCacheKey = CacheUtils.GenerateUserCacheKey(userId, symbol);
+        var userCacheKeyLookup = $"{userId}:{symbol}";
+        
+        if (!UserCacheKeys.TryGetValue(userCacheKeyLookup, out var userCacheKey))
+        {
+            return null; 
+        }
+
         var userTtl = CacheUtils.UserCacheSlidingTtl;
 
-        if (_cache.TryGetValue(userCacheKey, out TimeSeriesResponse cachedData))
+        if (_cache.TryGetValue(userCacheKey, out TimeSeriesResponse? cachedData))
         {
             _cache.Set(userCacheKey, cachedData, userTtl);
             return cachedData;
         }
-
+        
+        UserCacheKeys.TryRemove(userCacheKeyLookup, out _);
         return null;
     }
 
     private async Task<TimeSeriesResponse> GetSharedFiveMinCacheAsync(string symbol)
     {
-        if (_symbolToCacheKey.TryGetValue(symbol, out var existingCacheKey))
+        if (SymbolToCacheKey.TryGetValue(symbol, out var existingCacheKey))
         {
             if (_cache.TryGetValue(existingCacheKey, out TimeSeriesResponse cachedData))
             {
                 return cachedData;
             }
 
-            _symbolToCacheKey.TryRemove(symbol, out _);
+            SymbolToCacheKey.TryRemove(symbol, out _);
         }
 
         var (startDate, endDate) = DateTimeUtils.GenerateRandomMonth();
@@ -68,23 +74,37 @@ public class MarketDataService : IMarketDataService
 
         _cache.Set(cacheKey, data, sharedTtl);
 
-        _symbolToCacheKey[symbol] = cacheKey;
+        SymbolToCacheKey[symbol] = cacheKey;
 
         return data;
     }
 
     private void StoreUserCache(string userId, string symbol, TimeSeriesResponse baseData)
     {
-        var userCacheKey = CacheUtils.GenerateUserCacheKey(userId, symbol);
+
+        if (!SymbolToCacheKey.TryGetValue(symbol, out var sharedCacheKey))
+            return;
+
+        if (!_cache.TryGetValue(sharedCacheKey, out TimeSeriesResponse? _))
+        {
+            SymbolToCacheKey.TryRemove(symbol, out _);
+            return;
+        }
+        
+        var userCacheKey = CacheUtils.GenerateUserCacheKey(userId, symbol, sharedCacheKey);
         var userTtl = CacheUtils.UserCacheSlidingTtl;
 
         var userDataCopy = baseData.DeepClone();
         _cache.Set(userCacheKey, userDataCopy, userTtl);
+        
+        var userCacheKeyLookup = $"{userId}:{symbol}";
+        UserCacheKeys[userCacheKeyLookup] = userCacheKey;
     }
 
     public async Task<StocksSearchResponseDto> QueryStocksData(MarketDataDto request, string userId)
     {
         var userCache = GetUserCacheIfExists(userId, request.Symbol);
+
         if (userCache != null)
         {
             var resampled = TimeSeriesResampler.Resample(request.Interval, userCache);
@@ -102,16 +122,28 @@ public class MarketDataService : IMarketDataService
 
     public async Task<StocksSearchResponseDto> ContinueStocksData(MarketDataDto request, string userId)
     {
-        var userCacheKey = CacheUtils.GenerateUserCacheKey(userId, request.Symbol);
-        _cache.Remove(userCacheKey);
+        // Remove old user cache if exists
+        if (SymbolToCacheKey.TryGetValue(request.Symbol, out var oldSharedCacheKey))
+        {
+            var oldUserCacheKey = CacheUtils.GenerateUserCacheKey(userId, request.Symbol, oldSharedCacheKey);
+            _cache.Remove(oldUserCacheKey);
+        }
 
         if (request.LastDate == null) throw new ArgumentException("LastDate cannot be null.");
 
         var nextMonth = DateTimeOffset.FromUnixTimeSeconds(request.LastDate.Value).UtcDateTime.AddMonths(1);
-        var url = BuildTimeSeriesUrl(request, DateTimeUtils.GetMonthDateRange(nextMonth));
+        var (startDate, endDate) = DateTimeUtils.GetMonthDateRange(nextMonth);
+        
+        var newCacheKey = CacheUtils.GenerateMarketDataCacheKey(request.Symbol, startDate);
+        var sharedTtl = CacheUtils.MarketDataTtl;
+        
+        var url = BuildTimeSeriesUrl(request, (startDate, endDate));
         var response = await SendRequestAsync(url);
         var data = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
-
+        
+        _cache.Set(newCacheKey, data, sharedTtl);
+        SymbolToCacheKey[request.Symbol] = newCacheKey;
+        
         StoreUserCache(userId, request.Symbol, data);
 
         var resampledData = TimeSeriesResampler.Resample(request.Interval, data);
@@ -121,13 +153,23 @@ public class MarketDataService : IMarketDataService
 
     public async Task<StocksSearchResponseDto> RefreshStocksData(MarketDataDto request, string userId)
     {
-        var userCacheKey = CacheUtils.GenerateUserCacheKey(userId, request.Symbol);
-        
-        //Clear User & Symbol Cache
-        //Deletes the cache for everyone(in the future could be fixed/or not)
-        _cache.Remove(userCacheKey);
-        _symbolToCacheKey.TryRemove(request.Symbol, out _);
-        
+        // Remove user cache if exists
+        var userCacheKeyLookup = $"{userId}:{request.Symbol}";
+        if (UserCacheKeys.TryGetValue(userCacheKeyLookup, out var oldUserCacheKey))
+        {
+            _cache.Remove(oldUserCacheKey);
+            UserCacheKeys.TryRemove(userCacheKeyLookup, out _);
+            
+            if (SymbolToCacheKey.TryGetValue(request.Symbol, out var currentSharedCacheKey))
+            {
+                var userCacheKeyWithoutUserPrefix = oldUserCacheKey.Replace($"user:{userId}:", "");
+
+                if (currentSharedCacheKey == userCacheKeyWithoutUserPrefix)
+                    SymbolToCacheKey.TryRemove(request.Symbol, out _);
+                
+            }
+        }
+
         var sharedBase = await GetSharedFiveMinCacheAsync(request.Symbol);
 
         StoreUserCache(userId, request.Symbol, sharedBase);
