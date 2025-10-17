@@ -39,7 +39,7 @@ export default function InvestSection(props: InvestSectionProps) {
         if (profitLoss === undefined) return '--'
 
         const prefix = profitLoss >= 0 ? '+' : ''
-        return `${prefix}${Math.abs(profitLoss).toFixed(2)}`
+        return `${prefix}${profitLoss.toFixed(2)}`
     }
 
     const getFormattedCurrentValue = () => {

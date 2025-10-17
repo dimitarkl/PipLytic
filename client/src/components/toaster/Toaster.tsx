@@ -37,7 +37,7 @@ export default function Toaster({ message, duration = 4000, onClose }: ToasterPr
   return (
     <Alert
       variant="default"
-  className={`fixed left-1/2 -translate-x-1/2 top-6 z-50 max-w-lg w-auto px-4 flex items-start justify-between transition-all duration-200 ease-out ${
+      className={`fixed left-1/2 -translate-x-1/2 top-15 z-50 max-w-lg w-auto px-4 flex items-start justify-between transition-all duration-200 ease-out ${
         visible
           ? "opacity-100 translate-y-0 scale-100"
           : "opacity-0 -translate-y-2 scale-95 pointer-events-none"

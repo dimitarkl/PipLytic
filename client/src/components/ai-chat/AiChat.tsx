@@ -5,6 +5,7 @@ import { api, API_URL } from '@/lib/api';
 import { Send } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { useSymbol } from '@/contexts/SymbolContext';
 
 type Message = {
     index: number,
@@ -12,11 +13,11 @@ type Message = {
     message: string;
 };
 type AiChatProps = {
-    symbol?: string;
     endDate?: number;
 };
 
-export default function AiChat({ symbol = "IBM", endDate }: AiChatProps) {
+export default function AiChat({ endDate }: AiChatProps) {
+    const { symbol } = useSymbol();
     const [messages, setMessages] = useState<Message[]>([
         {
             index: -1,

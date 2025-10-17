@@ -1,6 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { UserContext } from '@/contexts/UserContext';
+import { useSymbol } from '@/contexts/SymbolContext';
 import { api, API_URL } from '@/lib/api';
 import { ChartData } from '@/types/chartData';
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
@@ -11,6 +12,7 @@ import { splitChartData } from '@/utils/charts';
 import Error from '@/components/error/Error';
 import { handleError } from '@/utils/errors';
 import Toaster from '@/components/toaster/Toaster';
+import SymbolPicker from '@/components/symbol-picker/SymbolPicker';
 
 export type Meta = {
     "symbol": string,
@@ -37,6 +39,7 @@ const UPDATE_SPEED = 500
 export default function Home() {
 
     const { user } = useContext(UserContext)
+    const { symbol } = useSymbol()
 
     const [tradeId, setTradeId] = useState<string | undefined>()
     const [interval, setInterval] = useState<"5min" | "15min" | "1h">("5min")
@@ -127,10 +130,10 @@ export default function Home() {
         const getChartData = async () => {
             try {
                 const response: SearchResponse = await api.post('/market/stocks/search', {
-                    symbol: "IBM",
+                    symbol: symbol,
                     interval: interval,
                 })
-                const { tempChartData, tempAfterData } = splitChartData(response.data.values, chartData)
+                const { tempChartData, tempAfterData } = splitChartData(response.data.values, undefined)
 
                 setMeta(response.data.meta)
                 setChartData(tempChartData)
@@ -141,7 +144,7 @@ export default function Home() {
             }
         }
         getChartData()
-    }, [interval])
+    }, [interval, symbol])
 
     useEffect(() => {
         let intervalId: number | null = null;
@@ -191,7 +194,7 @@ export default function Home() {
 
         try {
             const response: SearchResponse = await api.post('/market/stocks/continue', {
-                symbol: "IBM",
+                symbol: symbol,
                 interval: interval,
                 lastDate
             })
@@ -208,7 +211,7 @@ export default function Home() {
     const refreshData = async () => {
         try {
             const response: SearchResponse = await api.post('/market/stocks/refresh', {
-                symbol: "IBM",
+                symbol: symbol,
                 interval: interval,
             })
 
@@ -232,10 +235,13 @@ export default function Home() {
             {/* Header Section */}
             <div className="flex flex-col space-y-4 mb-4 sm:mb-6">
                 {/* Title and Balance Row */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{meta?.symbol ?? 'Loading...'}</h1>
-                        <p className="text-sm sm:text-base text-muted-foreground">Trading Dashboard</p>
+                <div className="flex flex-row sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div className="flex items-center gap-4">
+                        <SymbolPicker />
+                        {/* <div className="hidden sm:block">
+                            <p className="text-sm text-muted-foreground">Trading Dashboard</p>
+                            <p className="text-xs text-muted-foreground/60">{meta?.exchange_timezone}</p>
+                        </div> */}
                     </div>
                     <div className="bg-primary/10 px-3 py-1.5 rounded-full">
                         <span className="text-sm font-medium text-primary">Balance: ${balance.toLocaleString()}</span>
