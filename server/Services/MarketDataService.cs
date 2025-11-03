@@ -13,7 +13,6 @@ public class MarketDataService : IMarketDataService
     private readonly IConfiguration _configuration;
     private readonly IMemoryCache _cache;
 
-
     private static readonly ConcurrentDictionary<string, string> SymbolToCacheKey = new();
     
     // "userId:symbol" -> "user:userId:stock:data:SYMBOL:YYYY-MM"
@@ -72,7 +71,23 @@ public class MarketDataService : IMarketDataService
         var response = await SendRequestAsync(url);
         var data = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
 
-        _cache.Set(cacheKey, data, sharedTtl);
+        // Create cache entry options with eviction callback
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(sharedTtl)
+            .RegisterPostEvictionCallback((key, value, reason, state) =>
+            {
+                // Clean up the symbol mapping when cache expires
+                var symbolToClean = state as string;
+                if (symbolToClean != null && SymbolToCacheKey.TryGetValue(symbolToClean, out var mappedKey))
+                {
+                    if (mappedKey == key.ToString())
+                    {
+                        SymbolToCacheKey.TryRemove(symbolToClean, out _);
+                    }
+                }
+            }, symbol);
+
+        _cache.Set(cacheKey, data, cacheEntryOptions);
 
         SymbolToCacheKey[symbol] = cacheKey;
 
@@ -95,9 +110,26 @@ public class MarketDataService : IMarketDataService
         var userTtl = CacheUtils.UserCacheSlidingTtl;
 
         var userDataCopy = baseData.DeepClone();
-        _cache.Set(userCacheKey, userDataCopy, userTtl);
         
         var userCacheKeyLookup = $"{userId}:{symbol}";
+        
+        // Create cache entry options with eviction callback
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetSlidingExpiration(userTtl)
+            .RegisterPostEvictionCallback((key, value, reason, state) =>
+            {
+                var lookupKey = state as string;
+                if (lookupKey != null && UserCacheKeys.TryGetValue(lookupKey, out var mappedKey))
+                {
+                    if (mappedKey == key.ToString())
+                    {
+                        UserCacheKeys.TryRemove(lookupKey, out _);
+                    }
+                }
+            }, userCacheKeyLookup);
+        
+        _cache.Set(userCacheKey, userDataCopy, cacheEntryOptions);
+        
         UserCacheKeys[userCacheKeyLookup] = userCacheKey;
     }
 
@@ -127,6 +159,10 @@ public class MarketDataService : IMarketDataService
         {
             var oldUserCacheKey = CacheUtils.GenerateUserCacheKey(userId, request.Symbol, oldSharedCacheKey);
             _cache.Remove(oldUserCacheKey);
+            
+            // Clean up user cache mapping
+            var userCacheKeyLookup = $"{userId}:{request.Symbol}";
+            UserCacheKeys.TryRemove(userCacheKeyLookup, out _);
         }
 
         if (request.LastDate == null) throw new ArgumentException("LastDate cannot be null.");
@@ -141,7 +177,23 @@ public class MarketDataService : IMarketDataService
         var response = await SendRequestAsync(url);
         var data = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
         
-        _cache.Set(newCacheKey, data, sharedTtl);
+        // Create cache entry options with eviction callback
+        var cacheEntryOptions = new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(sharedTtl)
+            .RegisterPostEvictionCallback((key, value, reason, state) =>
+            {
+                // Clean up the symbol mapping when cache expires
+                var symbolToClean = state as string;
+                if (symbolToClean != null && SymbolToCacheKey.TryGetValue(symbolToClean, out var mappedKey))
+                {
+                    if (mappedKey == key.ToString())
+                    {
+                        SymbolToCacheKey.TryRemove(symbolToClean, out _);
+                    }
+                }
+            }, request.Symbol);
+        
+        _cache.Set(newCacheKey, data, cacheEntryOptions);
         SymbolToCacheKey[request.Symbol] = newCacheKey;
         
         StoreUserCache(userId, request.Symbol, data);

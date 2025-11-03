@@ -58,27 +58,27 @@ export default function Home() {
         if (amount <= 0) return
 
         if (balance < amount) {
-            alert('Insufficient balance')
+            setError('Insufficient balance')
             return
         }
 
         if (!chartData || chartData.length === 0) {
-            alert('Market data not available')
+            setError('Market data not available')
             return
         }
 
         if (!meta?.symbol) {
-            alert('Trading symbol is unavailable')
+            setError('Trading symbol is unavailable')
             return
         }
 
         if (!user?.id) {
-            alert('Please sign in to trade')
+            setError('Please sign in to trade')
             return
         }
 
         try {
-            const { data } = await api.post<{ id: string }>(`${API_URL}/users/${user.id}/trades/start`, {
+            const { data } = await api.post<{ id: string }>(`${API_URL}/users/trades`, {
                 amountInvested: amount,
                 type,
                 symbol: meta.symbol
@@ -102,7 +102,7 @@ export default function Home() {
         if (!investPoint || !tradeId) return
 
         if (!user?.id) {
-            alert('Please sign in to close trades')
+            setError('Please sign in to close trades')
             return
         }
 
@@ -110,7 +110,7 @@ export default function Home() {
         if (currentValue === undefined) return
 
         try {
-            await api.post(`${API_URL}/users/${user.id}/trades/end`, {
+            await api.patch(`${API_URL}/users/trades/`, {
                 tradeId,
                 amountFinal: currentValue,
             })

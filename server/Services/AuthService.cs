@@ -91,7 +91,7 @@ public class AuthService : IAuthService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:Token")!);
+            var key = Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:RefreshTokenSecret")!);
             
             var validationParameters = new TokenValidationParameters
             {
@@ -136,7 +136,7 @@ public class AuthService : IAuthService
         };
         
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:Token")!));
+            Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:RefreshTokenSecret")!));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 
@@ -160,7 +160,7 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.Role,user.UserType.ToString())
         };
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:Token")!));
+            Encoding.UTF8.GetBytes(_configuration.GetValue<string>("AppSettings:AccessTokenSecret")!));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 

@@ -17,13 +17,17 @@ namespace server
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Load user secrets first in development so they're available for all configuration
+            if (builder.Environment.IsDevelopment())
+            {
+                builder.Configuration.AddUserSecrets<Program>();
+            }
+
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
 
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(connectionString));
-
-            builder.Services.AddControllers();
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
@@ -49,7 +53,17 @@ namespace server
                 });
             });
 
-            //Auth
+            //Auth - Validate JWT secrets at startup
+            var accessTokenSecret = builder.Configuration["AppSettings:AccessTokenSecret"]
+                ?? throw new InvalidOperationException("AccessTokenSecret is not configured.");
+            var refreshTokenSecret = builder.Configuration["AppSettings:RefreshTokenSecret"]
+                ?? throw new InvalidOperationException("RefreshTokenSecret is not configured.");
+            
+            if (string.IsNullOrWhiteSpace(accessTokenSecret) || accessTokenSecret.Length < 32)
+                throw new InvalidOperationException("AccessTokenSecret must be at least 32 characters long.");
+            if (string.IsNullOrWhiteSpace(refreshTokenSecret) || refreshTokenSecret.Length < 32)
+                throw new InvalidOperationException("RefreshTokenSecret must be at least 32 characters long.");
+
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -61,7 +75,7 @@ namespace server
                         ValidAudience = builder.Configuration["AppSettings:Audience"],
                         ValidateLifetime = true,
                         IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(builder.Configuration["AppSettings:Token"]!)),
+                            Encoding.UTF8.GetBytes(accessTokenSecret)),
                         ValidateIssuerSigningKey = true,
                         RoleClaimType = ClaimTypes.Role
                     };
@@ -111,9 +125,9 @@ namespace server
             {
                 var method = context.Request.Method;
                 var path = context.Request.Path;
-                var query = context.Request.QueryString;
                 var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("{Method} {Path}{Query}", method, path, query);
+                // Log request without query string to avoid logging sensitive data (tokens, passwords)
+                logger.LogInformation("{Method} {Path}", method, path);
                 await next();
             });
 
@@ -131,13 +145,16 @@ namespace server
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
-                builder.Configuration.AddUserSecrets<Program>();
             }
 
+            // Seed database only if empty (runs once)
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                DataSeeder.SeedTopCompanies(db);
+                if (!db.Companies.Any())
+                {
+                    DataSeeder.SeedTopCompanies(db);
+                }
             }
 
             app.UseHttpsRedirection();
