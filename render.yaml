@@ -1,0 +1,36 @@
+services:
+  # .NET 9 Web Service
+  - type: web
+    name: piplytic-server
+    runtime: docker
+    region: frankfurt
+    plan: free
+    branch: main
+    rootDir: server
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://0.0.0.0:8080
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: AppSettings__GeminiApiKey
+        sync: false
+      - key: AppSettings__TwelveDataApiKey
+        sync: false
+      - key: AppSettings__AccessTokenSecret
+        generateValue: true
+      - key: AppSettings__RefreshTokenSecret
+        generateValue: true
+      - key: AppSettings__Issuer
+        value: PipLytic
+      - key: AppSettings__Audience
+        value: PipLytic-Audience
+      - key: CorsOrigins__0
+        value: http://localhost:5000
+      - key: CorsOrigins__1
+        sync: false
+      - key: AppSettings__GeminiSystemInstructions
+        sync: false

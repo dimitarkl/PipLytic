@@ -164,6 +164,9 @@ namespace server
 
             app.MapControllers();
 
+            // Health check endpoint for deployment platforms
+            app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
+
             app.Run();
         }
     }
