@@ -14,9 +14,10 @@ type Message = {
 };
 type AiChatProps = {
     endDate?: number;
+    demo?: boolean
 };
 
-export default function AiChat({ endDate }: AiChatProps) {
+export default function AiChat({ endDate, demo = false }: AiChatProps) {
     const { symbol } = useSymbol();
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -57,6 +58,21 @@ export default function AiChat({ endDate }: AiChatProps) {
             };
             return [...prev, userMessage];
         });
+        if (demo) {
+            setMessages(prev => {
+                const assistantIndex = prev.length;
+                const assistantMessage: Message = {
+                    index: assistantIndex,
+                    role: 'assistant',
+                    message: `You can't send messages to the AI without an account`,
+                };
+                return [...prev, assistantMessage];
+            })
+            setInputMessage('');
+            return;
+
+        }
+
 
         setInputMessage('');
         setIsLoading(true);

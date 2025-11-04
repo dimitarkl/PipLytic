@@ -13,11 +13,20 @@ type TradingPanelProps = {
     onStartTrade: (amount: number, type: 'short' | 'long') => Promise<void> | void;
     onCloseTrade: () => Promise<void> | void;
     defaultValue?: string;
+    demo?: boolean
 }
 
 export default function TradingPanel(props: TradingPanelProps) {
     //const { user } = useContext(UserContext)
-    const { balance, investPoint, currentValue, profitLoss, onStartTrade, onCloseTrade, defaultValue = 'investSection' } = props
+    const { balance,
+        investPoint,
+        currentValue,
+        profitLoss,
+        onStartTrade,
+        onCloseTrade,
+        defaultValue = 'investSection',
+        demo = false
+    } = props
 
     return (
         <div className="xl:col-start-3 order-2 lg:order-2 flex flex-col">
@@ -47,7 +56,7 @@ export default function TradingPanel(props: TradingPanelProps) {
                     />
                 </TabsContent>
                 <TabsContent value="aiSection" className="flex-1 mt-2 min-h-0">
-                    <AiChat />
+                    <AiChat demo={demo ? demo : undefined} />
                 </TabsContent>
             </Tabs>
         </div >
