@@ -32,7 +32,7 @@ export default function ChartDisplay(props: ChartDisplayProps) {
 
     return (
         <div className="xl:col-start-1 xl:col-span-2 order-1 lg:order-1 space-y-4 sm:space-y-6">
-            <Card className="p-3 sm:p-6 min-h-[450px]">
+            <Card className="p-3 md:p-6 min-h-[450px]">
                 <div className="mb-3 sm:mb-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-3 sm:mb-4">
                         <h2 className="text-base sm:text-lg font-semibold">Price Chart</h2>

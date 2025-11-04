@@ -89,7 +89,7 @@ public class ExceptionMiddleware
         var response = new
         {
             message = errors.FirstOrDefault(),
-            details = errors.Count > 1 ? errors : null,
+            //details = errors.Count > 1 ? errors : null,
         };
 
         var payload = JsonSerializer.Serialize(response,

@@ -61,7 +61,7 @@ api.interceptors.response.use(
 
                 accessToken = ""
                 await api.post(`${API_URL}/auth/logout`, {}, { withCredentials: true })
-                return Promise.reject(refreshError);
+                return Promise.reject(error);
             }
         }
         return Promise.reject(error); 

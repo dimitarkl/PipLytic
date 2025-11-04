@@ -19,7 +19,7 @@ export default function Header() {
             {/* Logo/Brand */}
             <Link to="/" className="mr-2 sm:mr-6 flex items-center space-x-2">
                 <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                <span className="font-bold inline-block">
+                <span className="font-bold text-xl inline-block">
                     PipLytic
                 </span>
             </Link>

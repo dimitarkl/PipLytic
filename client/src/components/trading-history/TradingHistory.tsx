@@ -6,8 +6,6 @@ type TradingHistoryProps = {
     trades: Trade[]
 }
 
-
-
 const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
         month: 'short',
@@ -52,13 +50,13 @@ export default function TradingHistory({ trades }: TradingHistoryProps) {
             <div className="grid grid-cols-3 md:grid-cols-3 gap-2 sm:gap-4">
                 <Card>
                     <CardContent className="pt-3 pb-3 sm:pt-6 sm:pb-6 px-3 sm:px-6">
-                        <div className="text-lg sm:text-2xl font-bold">{totalTrades}</div>
+                        <div className="text-base sm:text-xl font-bold">{totalTrades}</div>
                         <p className="text-xs text-muted-foreground">Trades</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardContent className="pt-3 pb-3 sm:pt-6 sm:pb-6 px-3 sm:px-6">
-                        <div className={`text-lg sm:text-2xl font-bold ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <div className={`text-base sm:text-xl font-bold ${totalProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {formatCurrency(totalProfit)}
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -68,7 +66,7 @@ export default function TradingHistory({ trades }: TradingHistoryProps) {
                 </Card>
                 <Card>
                     <CardContent className="pt-3 pb-3 sm:pt-6 sm:pb-6 px-3 sm:px-6">
-                        <div className="text-lg sm:text-2xl font-bold">
+                        <div className="text-base sm:text-xl font-bold">
                             {formatCurrency(completedTrades.reduce((acc, trade) =>
                                 acc + trade.amountInvested, 0
                             ))}
@@ -83,40 +81,39 @@ export default function TradingHistory({ trades }: TradingHistoryProps) {
                 <CardHeader>
                     <CardTitle>Recent Trades</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4">
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b">
-                                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Symbol</th>
-                                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Type</th>
-                                    <th className="text-right py-2 px-2 font-medium text-muted-foreground">Invested</th>
-                                    <th className="text-right py-2 px-2 font-medium text-muted-foreground">Final</th>
-                                    <th className="text-right py-2 px-2 font-medium text-muted-foreground">P&L</th>
-                                    <th className="text-left py-2 px-2 font-medium text-muted-foreground">Start Date</th>
+                                    <th className="text-left py-2 px-2 text-xs font-medium text-muted-foreground">Symbol</th>
+                                    <th className="text-left py-2 px-2 text-xs font-medium text-muted-foreground">Type</th>
+                                    <th className="hidden md:table-cell text-right py-2 px-2 text-xs font-medium text-muted-foreground">Invested</th>
+                                    <th className="hidden md:table-cell text-right py-2 px-2 text-xs font-medium text-muted-foreground">Final</th>
+                                    <th className="text-right py-2 px-2 text-xs font-medium text-muted-foreground">P&L</th>
+                                    <th className="text-left py-2 px-2 text-xs font-medium text-muted-foreground">Start Date</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {trades.map((trade) => {
                                     const pnl = trade.endDate > 0 ? trade.amountFinal - trade.amountInvested : 0
-
                                     return (
                                         <tr key={trade.id} className="border-b hover:bg-muted/50 transition-colors">
-                                            <td className="py-3 px-2">
-                                                <div className="font-medium">{trade.symbol}</div>
+                                            <td className="py-2 px-2">
+                                                <div className="text-sm font-medium">{trade.symbol}</div>
                                             </td>
-                                            <td className="py-3 px-2">
-                                                <span className={`font-medium uppercase ${getTypeColor(trade.type)}`}>
+                                            <td className="py-2 px-2">
+                                                <span className={`text-sm font-medium uppercase ${getTypeColor(trade.type)}`}>
                                                     {trade.type}
                                                 </span>
                                             </td>
-                                            <td className="py-3 px-2 text-right font-medium">
+                                            <td className="hidden md:table-cell py-2 px-2 text-right text-sm font-medium">
                                                 {formatCurrency(trade.amountInvested)}
                                             </td>
-                                            <td className="py-3 px-2 text-right font-medium">
+                                            <td className="hidden md:table-cell py-2 px-2 text-right text-sm font-medium">
                                                 {trade.endDate > 0 ? formatCurrency(trade.amountFinal) : '-'}
                                             </td>
-                                            <td className="py-3 px-2 text-right font-medium">
+                                            <td className="py-2 px-2 text-right text-sm font-medium">
                                                 {trade.endDate > 0 ? (
                                                     <span className={getPnLColor(pnl)}>
                                                         {pnl >= 0 ? '+' : ''}{formatCurrency(pnl)}
@@ -125,7 +122,7 @@ export default function TradingHistory({ trades }: TradingHistoryProps) {
                                                     '-'
                                                 )}
                                             </td>
-                                            <td className="py-3 px-2 text-sm text-muted-foreground">
+                                            <td className="py-2 px-2 text-xs text-muted-foreground">
                                                 {formatDate(new Date(trade.executedAt * 1000))}
                                             </td>
                                         </tr>

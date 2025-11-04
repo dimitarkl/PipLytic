@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/form"
 import { Link, useNavigate } from "react-router-dom"
 import PasswordField from "./password-field/PasswordField"
-import { AxiosError } from "axios"
 import FormError from "@/components/form-error/FormError"
+import { handleError } from "@/utils/errors"
 
 type FormValues = {
     email: string
@@ -50,13 +50,10 @@ export function Register() {
         setResponseError(undefined)
         try {
             await registerUser(values.email, values.password)
-            navigate('/')
+            navigate('/home')
         } catch (error) {
-            if (error instanceof AxiosError && error.response?.status === 400) {
-                setResponseError(error.response.data)
-            } else {
-                setResponseError("An unexpected error occurred. Please try again.")
-            }
+            setResponseError(handleError(error) ?? "An unexpected error occurred. Please try again.")
+
         }
     }
 

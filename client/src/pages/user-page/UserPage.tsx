@@ -29,7 +29,7 @@ export default function UserPage() {
     useEffect(() => {
         const getTrades = async () => {
             try {
-                const response = await api.get(`${API_URL}/users/${user?.id}/trades`)
+                const response = await api.get(`${API_URL}/users/trades`)
                 setTrades(response.data)
             } catch (err) {
                 const error = handleError(err) ?? "Failed Fetching Stocks Data"
@@ -40,7 +40,7 @@ export default function UserPage() {
     }, [])
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="container mx-auto px-2 md:px-4 py-8 max-w-4xl">
             {/* User Profile Card */}
             <Card className="mb-8">
                 <CardHeader>
@@ -50,8 +50,8 @@ export default function UserPage() {
                     <div className="flex items-start space-x-6">
                         {/* Profile Image */}
                         <div className="flex-shrink-0">
-                            <div className="w-24 h-24 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-                                <span className="text-white text-2xl font-bold">
+                            <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-xl font-bold">
                                     {user?.email.charAt(0).toUpperCase()}
                                 </span>
                             </div>
@@ -59,10 +59,10 @@ export default function UserPage() {
 
                         {/* User Info */}
                         <div className="flex-1 min-w-0">
-                            <h2 className="text-2xl font-bold text-foreground mb-2">
+                            <h2 className="text-xl font-bold text-foreground mb-1">
                                 {user?.email.split('@')[0]}
                             </h2>
-                            <p className="text-muted-foreground mb-4">
+                            <p className="text-sm text-muted-foreground mb-4">
                                 {user?.email}
                             </p>
                             {/* <div className="flex flex-wrap gap-2">
