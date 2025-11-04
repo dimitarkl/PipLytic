@@ -7,8 +7,6 @@ public class DatabaseInitializer
         var csb = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
         var dbName = csb.Database;
 
-        csb.Database = "postgres";
-
         using var conn = new Npgsql.NpgsqlConnection(csb.ConnectionString);
         conn.Open();
 
