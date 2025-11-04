@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export const API_URL = 'http://localhost:5011/api'
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5011/api'
 export const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
