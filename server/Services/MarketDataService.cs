@@ -14,7 +14,7 @@ public class MarketDataService : IMarketDataService
     private readonly IMemoryCache _cache;
 
     private static readonly ConcurrentDictionary<string, string> SymbolToCacheKey = new();
-    
+
     // "userId:symbol" -> "user:userId:stock:data:SYMBOL:YYYY-MM"
     private static readonly ConcurrentDictionary<string, string> UserCacheKeys = new();
 
@@ -31,19 +31,18 @@ public class MarketDataService : IMarketDataService
     public TimeSeriesResponse? GetUserCacheIfExists(string userId, string symbol)
     {
         var userCacheKeyLookup = $"{userId}:{symbol}";
-        
-        if (!UserCacheKeys.TryGetValue(userCacheKeyLookup, out var userCacheKey))
-        {
-            return null; 
-        }
 
-        var userTtl = CacheUtils.UserCacheSlidingTtl;
+        if (!UserCacheKeys.TryGetValue(userCacheKeyLookup, out var userCacheKey))
+            return null;
+        
+        if (!userCacheKey.StartsWith($"user:{userId}:"))
+        {
+            UserCacheKeys.TryRemove(userCacheKeyLookup, out _);
+            return null;
+        }
 
         if (_cache.TryGetValue(userCacheKey, out TimeSeriesResponse? cachedData))
-        {
-            _cache.Set(userCacheKey, cachedData, userTtl);
             return cachedData;
-        }
         
         UserCacheKeys.TryRemove(userCacheKeyLookup, out _);
         return null;
@@ -54,10 +53,8 @@ public class MarketDataService : IMarketDataService
         if (SymbolToCacheKey.TryGetValue(symbol, out var existingCacheKey))
         {
             if (_cache.TryGetValue(existingCacheKey, out TimeSeriesResponse cachedData))
-            {
                 return cachedData;
-            }
-
+            
             SymbolToCacheKey.TryRemove(symbol, out _);
         }
 
@@ -70,13 +67,11 @@ public class MarketDataService : IMarketDataService
 
         var response = await SendRequestAsync(url);
         var data = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
-
-        // Create cache entry options with eviction callback
+        
         var cacheEntryOptions = new MemoryCacheEntryOptions()
             .SetAbsoluteExpiration(sharedTtl)
             .RegisterPostEvictionCallback((key, value, reason, state) =>
             {
-                // Clean up the symbol mapping when cache expires
                 var symbolToClean = state as string;
                 if (symbolToClean != null && SymbolToCacheKey.TryGetValue(symbolToClean, out var mappedKey))
                 {
@@ -113,7 +108,6 @@ public class MarketDataService : IMarketDataService
         
         var userCacheKeyLookup = $"{userId}:{symbol}";
         
-        // Create cache entry options with eviction callback
         var cacheEntryOptions = new MemoryCacheEntryOptions()
             .SetSlidingExpiration(userTtl)
             .RegisterPostEvictionCallback((key, value, reason, state) =>
@@ -129,7 +123,7 @@ public class MarketDataService : IMarketDataService
             }, userCacheKeyLookup);
         
         _cache.Set(userCacheKey, userDataCopy, cacheEntryOptions);
-        
+
         UserCacheKeys[userCacheKeyLookup] = userCacheKey;
     }
 
@@ -159,7 +153,7 @@ public class MarketDataService : IMarketDataService
         {
             var oldUserCacheKey = CacheUtils.GenerateUserCacheKey(userId, request.Symbol, oldSharedCacheKey);
             _cache.Remove(oldUserCacheKey);
-            
+
             // Clean up user cache mapping
             var userCacheKeyLookup = $"{userId}:{request.Symbol}";
             UserCacheKeys.TryRemove(userCacheKeyLookup, out _);
@@ -177,7 +171,6 @@ public class MarketDataService : IMarketDataService
         var response = await SendRequestAsync(url);
         var data = JsonUtils.ParseResponse<TimeSeriesResponse>(response);
         
-        // Create cache entry options with eviction callback
         var cacheEntryOptions = new MemoryCacheEntryOptions()
             .SetAbsoluteExpiration(sharedTtl)
             .RegisterPostEvictionCallback((key, value, reason, state) =>
@@ -211,14 +204,14 @@ public class MarketDataService : IMarketDataService
         {
             _cache.Remove(oldUserCacheKey);
             UserCacheKeys.TryRemove(userCacheKeyLookup, out _);
-            
+
             if (SymbolToCacheKey.TryGetValue(request.Symbol, out var currentSharedCacheKey))
             {
                 var userCacheKeyWithoutUserPrefix = oldUserCacheKey.Replace($"user:{userId}:", "");
 
                 if (currentSharedCacheKey == userCacheKeyWithoutUserPrefix)
                     SymbolToCacheKey.TryRemove(request.Symbol, out _);
-                
+
             }
         }
 
