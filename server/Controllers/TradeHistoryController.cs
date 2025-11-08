@@ -9,7 +9,7 @@ using server.Services;
 
 namespace server.Controllers;
 
-[Route("api/users/trades")]
+[Route("users/trades")]
 [ApiController]
 public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHistoryController> logger) : ControllerBase
 {

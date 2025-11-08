@@ -8,7 +8,7 @@ using server.Services;
 namespace server.Controllers;
 
 [ApiController]
-[Route("api/ai-chat")]
+[Route("ai-chat")]
 public class AiChatController(ILogger<AiChatController> logger, IAiChatService aiChatService) : ControllerBase
 {
     [Authorize]

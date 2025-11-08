@@ -4,7 +4,7 @@ using server.Services;
 
 namespace server.Controllers;
 
-[Route("api/companies")]
+[Route("companies")]
 [ApiController]
 public class CompaniesController(ICompaniesService companyService) : ControllerBase
 {

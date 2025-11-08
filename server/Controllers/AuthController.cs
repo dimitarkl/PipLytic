@@ -14,7 +14,7 @@ using server.Exceptions;
 
 namespace server.Controllers
 {
-    [Route("api/auth")]
+    [Route("auth")]
     [ApiController]
     public class AuthController(IAuthService authService) : ControllerBase
     {
@@ -26,7 +26,7 @@ namespace server.Controllers
 
             Response.Cookies.Append("refreshToken", result.RefreshToken, cookieOptions);
 
-            return Created("/api/auth/login", new { accessToken = result.AccessToken, message = "User created" });
+            return Created("/auth/login", new { accessToken = result.AccessToken, message = "User created" });
         }
 
         [HttpPost("login")]
