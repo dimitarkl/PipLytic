@@ -1,4 +1,4 @@
-import { LogIn, LogOut, User, BarChart3 } from "lucide-react";
+import { LogIn, LogOut, User } from "lucide-react";
 import { Button } from "../ui/button";
 import { useContext } from "react";
 import { UserContext } from "@/contexts/UserContext";

@@ -1,96 +1,101 @@
-# This is the name of your GitHub Actions workflow
 name: Build and Deploy PipLytic
 
-# This workflow runs on any push to your "main" branch
 on:
   push:
     branches: [ "prod" ]
 
 jobs:
-  # --- JOB 1: BUILD AND DEPLOY THE .NET BACKEND ---
   deploy-backend:
     name: Deploy Backend
-    runs-on: ubuntu-latest # This is the GitHub VM, not your server
+    runs-on: ubuntu-latest
 
     steps:
     - name: 1. Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: 2. Setup .NET 9
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: '9.0.x'
 
-    - name: 3. Publish .NET App
-      # This finds your .csproj in the 'server' folder and publishes it
-      run: dotnet publish server -c Release -o ./publish-be
+    - name: 3. Restore Dependencies
+      run: dotnet restore server/server.csproj
 
-    - name: 4. Deploy to Server (rsync)
-      # Uses rsync to only copy files that have changed. Much faster!
-      uses: burnett01/rsync-deploy-action@v6
+    - name: 4. Publish .NET App
+      run: dotnet publish server/server.csproj -c Release -o ./publish-be
+
+    - name: 5. Verify Build Output
+      run: ls -la ./publish-be
+
+    - name: 6. Deploy to Server (rsync)
+      uses: burnett01/rsync-deployments@7.1.0
       with:
-        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-        REMOTE_USER: ${{ secrets.SERVER_USER }}
-        PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        SOURCE: "./publish-be/" # The folder GitHub just built
-        TARGET: "/var/www/piplytic-be" # Your server's folder
-        ARGS: "-avz --delete" # Flags: archive, verbose, compress, delete old files
+        switches: -avzr --delete
+        path: ./publish-be/
+        remote_path: /var/www/piplytic-be
+        remote_host: ${{ secrets.SERVER_HOST }}
+        remote_user: ${{ secrets.SERVER_USER }}
+        remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: 5. Set Permissions & Restart Service
-      # This runs commands on your server after the files are copied
-      uses: appleboy/ssh-action@master
+    - name: 7. Set Permissions & Restart Service
+      uses: appleboy/ssh-action@v1
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          # Set ownership to the 'appuser'
           sudo chown -R appuser:appuser /var/www/piplytic-be
-          # Restart the .NET service
+          sudo chmod +x /var/www/piplytic-be/server
           sudo systemctl restart piplytic-be.service
+          sudo systemctl status piplytic-be.service
 
-  # --- JOB 2: BUILD AND DEPLOY THE REACT FRONTEND ---
   deploy-frontend:
     name: Deploy Frontend
     runs-on: ubuntu-latest
 
     steps:
     - name: 1. Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: 2. Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '20' # Use your app's Node.js version
+        node-version: '20'
         cache: 'npm'
         cache-dependency-path: client/package-lock.json
 
     - name: 3. Install Dependencies
-      run: npm install
-      working-directory: ./client # Tell it to run 'npm' in the 'client' folder
+      working-directory: ./client
+      run: npm ci
 
     - name: 4. Build React App
-      run: npm run build
       working-directory: ./client
+      run: npm run build
       env:
-        CI: false # Prevents build from failing on warnings
+        CI: false
 
-    - name: 5. Deploy to Server (rsync)
-      uses: burnett01/rsync-deploy-action@v6
+    - name: 5. Verify Build Output
+      run: |
+        ls -la ./client/dist
+        test -f ./client/dist/index.html || exit 1
+
+    - name: 6. Deploy to Server (rsync)
+      uses: burnett01/rsync-deployments@7.1.0
       with:
-        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-        REMOTE_USER: ${{ secrets.SERVER_USER }}
-        PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        SOURCE: "./client/dist/" # Vite outputs to 'dist' folder
-        TARGET: "/var/www/piplytic-fe" # Your server's folder
-        ARGS: "-avz --delete"
+        switches: -avzr --delete
+        path: ./client/dist/
+        remote_path: /var/www/piplytic-fe
+        remote_host: ${{ secrets.SERVER_HOST }}
+        remote_user: ${{ secrets.SERVER_USER }}
+        remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: 6. Set Permissions for Nginx
-      uses: appleboy/ssh-action@master
+    - name: 7. Set Permissions for Nginx
+      uses: appleboy/ssh-action@v1
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          # Set ownership to the 'www-data' user for Nginx
           sudo chown -R www-data:www-data /var/www/piplytic-fe
+          sudo find /var/www/piplytic-fe -type f -exec chmod 644 {} \;
+          sudo find /var/www/piplytic-fe -type d -exec chmod 755 {} \;
