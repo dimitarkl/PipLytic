@@ -7,7 +7,7 @@ using server.Services;
 
 namespace server.Controllers;
 
-[Route("api/users")]
+[Route("users")]
 [ApiController]
 public class UserController(IUserService userService) : ControllerBase
 {

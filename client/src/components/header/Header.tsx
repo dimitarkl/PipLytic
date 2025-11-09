@@ -18,7 +18,10 @@ export default function Header() {
         <header className="w-full fixed px-2 sm:px-4 top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex h-14 items-center">
             {/* Logo/Brand */}
             <Link to="/" className="mr-2 sm:mr-6 flex items-center space-x-2">
-                <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                {/* <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> */}
+                <div className="h-10 w-10">
+                    <img src="/piplytic-nobg.png" alt="PipLytic Logo" className="w-full" />
+                </div>
                 <span className="font-bold text-xl inline-block">
                     PipLytic
                 </span>

@@ -7,7 +7,7 @@ using server.Middleware;
 
 namespace server.Controllers;
 
-[Route("api/market")]
+[Route("market")]
 [ApiController]
 public class MarketDataController(IMarketDataService marketDataService, ILogger<MarketDataController> logger)
     : ControllerBase
