@@ -95,7 +95,7 @@ jobs:
     - name: 7. Set Permissions for Nginx
       run: |
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
-          sudo chown -R www-data:www-data /var/www/piplytic-fe
+          sudo chown -R deployuser:deployuser /var/www/piplytic-fe
           sudo find /var/www/piplytic-fe -type f -exec chmod 644 {} \;
           sudo find /var/www/piplytic-fe -type d -exec chmod 755 {} \;
         '
