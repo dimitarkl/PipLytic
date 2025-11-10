@@ -55,13 +55,13 @@ export default function InvestSection(props: InvestSectionProps) {
         <>
             <div className="xl:col-span-1 order-2 lg:order-2">
                 <Card className="p-4 sm:p-6 h-fit">
-                    <div className="text-center mb-4 sm:mb-6">
+                    <div className="text-center ">
                         <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">Trading Panel</h2>
                         <p className="text-muted-foreground text-xs sm:text-sm">Take a position on the market</p>
                     </div>
 
                     {/* Investment Amount Section */}
-                    <div className="mb-4 sm:mb-6">
+                    <div className="">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 sm:mb-3 gap-1">
                             <label className="text-sm font-medium text-foreground">Investment Amount</label>
                             {investPoint?.amount && (

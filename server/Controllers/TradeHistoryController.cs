@@ -31,7 +31,7 @@ public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHis
 
         var createdTrade = await tradeService.AddTrade(userId, tradeRequest);
 
-        return Created($"/api/users/{userId}/trades/{createdTrade.Id}", createdTrade);
+        return Created($"users/trades/{createdTrade.Id}", createdTrade);
     }
 
     [Authorize]
