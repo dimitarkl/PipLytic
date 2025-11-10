@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { api, API_URL } from '@/lib/api';
+import { api } from '@/lib/api';
 import { Send } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -36,7 +36,7 @@ export default function AiChat({ endDate, demo = false }: AiChatProps) {
 
     useEffect(() => {
         const getChatHistory = async () => {
-            const response = await api.get(`${API_URL}/ai-chat`);
+            const response = await api.get(`/ai-chat`);
             if (response.data.length > 0)
                 setMessages(response.data)
         }
@@ -78,7 +78,7 @@ export default function AiChat({ endDate, demo = false }: AiChatProps) {
         setIsLoading(true);
 
         try {
-            const response = await api.post<Message>(`${API_URL}/ai-chat`, {
+            const response = await api.post<Message>(`/ai-chat`, {
                 symbol: symbol,
                 message: messageText,
                 endDate: endDate || Date.now()

@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { UserContext } from '@/contexts/UserContext';
 import { useSymbol } from '@/contexts/SymbolContext';
-import { api, API_URL } from '@/lib/api';
+import { api } from '@/lib/api';
 import { ChartData } from '@/types/chartData';
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import TradingPanel from './trading-panel/TradingPanel';
@@ -78,7 +78,7 @@ export default function Home() {
         }
 
         try {
-            const { data } = await api.post<{ id: string }>(`${API_URL}/users/trades`, {
+            const { data } = await api.post<{ id: string }>(`/users/trades`, {
                 amountInvested: amount,
                 type,
                 symbol: meta.symbol
@@ -110,7 +110,7 @@ export default function Home() {
         if (currentValue === undefined) return
 
         try {
-            await api.patch(`${API_URL}/users/trades/`, {
+            await api.patch(`/users/trades/`, {
                 tradeId,
                 amountFinal: currentValue,
             })

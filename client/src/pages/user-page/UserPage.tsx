@@ -2,7 +2,7 @@ import { UserContext } from "@/contexts/UserContext"
 import { useContext, useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import TradingHistory from "@/components/trading-history/TradingHistory"
-import { api, API_URL } from "@/lib/api"
+import { api } from "@/lib/api"
 import { handleError } from "@/utils/errors"
 import Error from "@/components/error/Error"
 
@@ -29,7 +29,7 @@ export default function UserPage() {
     useEffect(() => {
         const getTrades = async () => {
             try {
-                const response = await api.get(`${API_URL}/users/trades`)
+                const response = await api.get(`/users/trades`)
                 setTrades(response.data)
             } catch (err) {
                 const error = handleError(err) ?? "Failed Fetching Stocks Data"
