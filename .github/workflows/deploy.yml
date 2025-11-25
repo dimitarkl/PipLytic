@@ -26,10 +26,10 @@ jobs:
         dotnet-version: '9.0.x'
 
     - name: 4. Restore Dependencies
-      run: dotnet restore server/server.csproj
+      run: dotnet restore server/PipLytic.Api/server.csproj
 
     - name: 5. Publish .NET App
-      run: dotnet publish server/server.csproj -c Release -o ./publish-be
+      run: dotnet publish server/PipLytic.Api/server.csproj -c Release -o ./publish-be
 
     - name: 6. Deploy to Server (rsync)
       # We now use the native rsync command, which CAN see the SSH agent
