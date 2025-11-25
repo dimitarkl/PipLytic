@@ -26,10 +26,10 @@ jobs:
         dotnet-version: '9.0.x'
 
     - name: 4. Restore Dependencies
-      run: dotnet restore server/server.csproj
+      run: dotnet restore server/Piplytic.Api/PipLytic.Api.csproj
 
     - name: 5. Publish .NET App
-      run: dotnet publish server/server.csproj -c Release -o ./publish-be
+      run: dotnet publish server/Piplytic.Api/PipLytic.Api.csproj -c Release -o ./publish-be
 
     - name: 6. Deploy to Server (rsync)
       # We now use the native rsync command, which CAN see the SSH agent
@@ -45,7 +45,7 @@ jobs:
       run: |
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
           sudo chown -R deployuser:deployuser /var/www/piplytic-be
-          sudo chmod +x /var/www/piplytic-be/server
+          sudo chmod +x /var/www/piplytic-be
           sudo systemctl restart piplytic-be.service
           sudo systemctl status piplytic-be.service
         '
