@@ -5,7 +5,7 @@ import { TrendingUp, BarChart3, DollarSign, Shield, Zap } from "lucide-react";
 
 export default function Landing() {
     return (
-        <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        <div className="w-full min-h-screen bg-gradient-to-b from-background to-muted/20">
             {/* Hero Section */}
             <div className="container mx-auto px-4 py-12 sm:py-16">
                 <div className="text-center max-w-4xl mx-auto space-y-6">
