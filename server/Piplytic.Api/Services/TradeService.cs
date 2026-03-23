@@ -66,7 +66,7 @@ public class TradeService : ITradeService
             .ToListAsync();
 
         if (!trades.Any())
-            throw new NotFoundException($"Trades for user {userId} not found");
+            throw new NotFoundException($"Trades not found");
 
         return trades.OrderByDescending(trade => trade.ExecutedAt).ToList();
     }

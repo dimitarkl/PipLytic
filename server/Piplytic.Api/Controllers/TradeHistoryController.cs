@@ -11,7 +11,7 @@ namespace PipLytic.Api.Controllers;
 
 [Route("users/trades")]
 [ApiController]
-public class TradeHistoryController(ITradeService tradeService, ILogger<TradeHistoryController> logger) : ControllerBase
+public class TradeHistoryController(ITradeService tradeService) : ControllerBase
 {
     [Authorize]
     [HttpGet]

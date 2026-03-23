@@ -5,10 +5,28 @@ on:
     branches: [ "prod" ]
 
 jobs:
-  # --- JOB 1: BUILD AND DEPLOY THE .NET BACKEND ---
+  # --- JOB 1: RUN TESTS ---
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 1. Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 2. Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: 3. Run Tests
+      run: dotnet test server/PipLytic.Tests/PipLytic.Tests.csproj --configuration Release --verbosity minimal
+
+  # --- JOB 2: BUILD AND DEPLOY THE .NET BACKEND ---
   deploy-backend:
     name: Deploy Backend
     runs-on: ubuntu-latest
+    needs: test-backend
 
     steps:
     - name: 1. Checkout Code
@@ -26,10 +44,10 @@ jobs:
         dotnet-version: '9.0.x'
 
     - name: 4. Restore Dependencies
-      run: dotnet restore server/PipLytic.Api/server.csproj
+      run: dotnet restore server/Piplytic.Api/PipLytic.Api.csproj
 
     - name: 5. Publish .NET App
-      run: dotnet publish server/PipLytic.Api/server.csproj -c Release -o ./publish-be
+      run: dotnet publish server/Piplytic.Api/PipLytic.Api.csproj -c Release -o ./publish-be
 
     - name: 6. Deploy to Server (rsync)
       # We now use the native rsync command, which CAN see the SSH agent
@@ -50,7 +68,7 @@ jobs:
           sudo systemctl status piplytic-be.service
         '
 
-  # --- JOB 2: BUILD AND DEPLOY THE REACT FRONTEND ---
+  # --- JOB 3: BUILD AND DEPLOY THE REACT FRONTEND ---
   deploy-frontend:
     name: Deploy Frontend
     runs-on: ubuntu-latest
